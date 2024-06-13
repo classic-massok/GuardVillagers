@@ -248,18 +248,28 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
         if (nbt.contains("ArmorItems", 9)) {
             NbtList armorItems = nbt.getList("ArmorItems", 10);
             for (int i = 0; i < this.armorItems.size(); ++i) {
-                int index = GuardEntity.slotToInventoryIndex(getPreferredEquipmentSlot(ItemStack.fromNbt(this.getRegistryManager(), armorItems.getCompound(i)).get()));
-                this.guardInventory.setStack(index, ItemStack.fromNbt(this.getRegistryManager(), armorItems.getCompound(i)).get());
+                ItemStack stack = ItemStack.fromNbtOrEmpty(this.getRegistryManager(), armorItems.getCompound(i));
+                if (!stack.isEmpty()) {
+                    int index = GuardEntity.slotToInventoryIndex(getPreferredEquipmentSlot(ItemStack.fromNbt(this.getRegistryManager(), armorItems.getCompound(i)).orElse(ItemStack.EMPTY)));
+                    this.guardInventory.setStack(index, stack);
+                } else {
+                    listtag.add(new NbtCompound());
+                }
             }
         }
+
         if (nbt.contains("HandItems", 9)) {
             NbtList handItems = nbt.getList("HandItems", 10);
             for (int i = 0; i < this.handItems.size(); ++i) {
                 int handSlot = i == 0 ? 5 : 4;
-                this.guardInventory.setStack(handSlot, ItemStack.fromNbt(this.getRegistryManager(), handItems.getCompound(i)).get());
+                if (!ItemStack.fromNbtOrEmpty(this.getRegistryManager(), handItems.getCompound(i)).isEmpty())
+                    this.guardInventory.setStack(handSlot, ItemStack.fromNbtOrEmpty(this.getRegistryManager(), handItems.getCompound(i)));
+                else
+                    listtag.add(new NbtCompound());
             }
+            if (!getWorld().isClient) this.readAngerFromNbt(getWorld(), nbt);
         }
-        if (!getWorld().isClient) this.readAngerFromNbt(getWorld(), nbt);
+
     }
 
     @Override

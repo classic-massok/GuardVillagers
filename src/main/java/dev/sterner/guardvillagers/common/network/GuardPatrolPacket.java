@@ -8,20 +8,18 @@ import net.minecraft.entity.Entity;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
 public record GuardPatrolPacket(int guardId, boolean pressed) implements CustomPayload {
     public static final CustomPayload.Id<GuardPatrolPacket> ID = new CustomPayload.Id<>(Identifier.of(GuardVillagers.MODID, "guard_patrol"));
-    public static final PacketCodec<RegistryByteBuf, GuardPatrolPacket> PACKET_CODEC = PacketCodec.of(
-            GuardPatrolPacket::read,
-            GuardPatrolPacket::write
+    public static final PacketCodec<RegistryByteBuf, GuardPatrolPacket> PACKET_CODEC = PacketCodec.tuple(
+            PacketCodecs.INTEGER, GuardPatrolPacket::guardId,
+            PacketCodecs.BOOL, GuardPatrolPacket::pressed,
+            GuardPatrolPacket::new
     );
-
-    private static GuardPatrolPacket write(ByteBuf byteBuf) {
-        return new GuardPatrolPacket(byteBuf.readInt(), byteBuf.readBoolean());
-    }
 
     public void handle(ServerPlayNetworking.Context context) {
 
@@ -33,12 +31,6 @@ public record GuardPatrolPacket(int guardId, boolean pressed) implements CustomP
             }
             guardEntity.setPatrolling(pressed);
         }
-    }
-
-    private GuardPatrolPacket read(PacketByteBuf buf) {
-        int id = buf.readInt();
-        boolean pressed = buf.readBoolean();
-        return new GuardPatrolPacket(id, pressed);
     }
 
     @Override

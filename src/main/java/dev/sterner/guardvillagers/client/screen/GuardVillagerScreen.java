@@ -44,7 +44,6 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
     private static final ButtonTextures GUARD_NOT_PATROLLING_ICONS = new ButtonTextures(GuardVillagers.id("patrolling/notpatrolling1"), GuardVillagers.id( "patrolling/notpatrolling2"));
 
 
-    private static final Identifier ICONS = Identifier.ofVanilla("textures/gui/icons.png");
     private final PlayerEntity player;
     private final GuardEntity guardEntity;
     private float mousePosX;
@@ -100,6 +99,10 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
 
      */
 
+    private static final Identifier ARMOR_EMPTY_TEXTURE = Identifier.ofVanilla("hud/armor_empty");
+    private static final Identifier ARMOR_HALF_TEXTURE = Identifier.ofVanilla("hud/armor_half");
+    private static final Identifier ARMOR_FULL_TEXTURE = Identifier.ofVanilla("hud/armor_full");
+
     private void drawHeart(DrawContext context, HeartType type, int x, int y, boolean half) {
         RenderSystem.enableBlend();
         context.drawGuiTexture(type.getTexture(half), x, y, 9, 9);
@@ -111,7 +114,10 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
         super.drawForeground(ctx, x, y);
         int health = MathHelper.ceil(guardEntity.getHealth());
         int armor = guardEntity.getArmor();
-        int statusU = guardEntity.hasStatusEffect(StatusEffects.POISON) ? 4 : 0;
+
+        boolean statusU = guardEntity.hasStatusEffect(StatusEffects.POISON);
+        boolean statusW = guardEntity.hasStatusEffect(StatusEffects.WITHER);
+        var heart = statusU ? HeartType.POISONED : statusW ? HeartType.WITHERED : guardEntity.isFrozen() ? HeartType.FROZEN : HeartType.NORMAL;
         //Health
         for (int i = 0; i < 10; i++) {
             this.drawHeart(ctx, HeartType.CONTAINER, (i * 8) + 80, 20, false);
@@ -119,22 +125,25 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
         }
         for (int i = 0; i < health / 2; i++) {
             if (health % 2 != 0 && health / 2 == i + 1) {
-                ctx.drawTexture(ICONS, (i * 8) + 80, 20, 16 + 9 * (4 + statusU), 0, 9, 9);
-                ctx.drawTexture(ICONS, ((i + 1) * 8) + 80, 20, 16 + 9 * (5 + statusU), 0, 9, 9);
+                this.drawHeart(ctx, HeartType.NORMAL, (i * 8) + 80, 20, false);
+                this.drawHeart(ctx, HeartType.NORMAL, ((i + 1) * 8) + 80, 20, true);
+                //ctx.drawTexture(ICONS, (i * 8) + 80, 20, 16 + 9 * (4 + statusU), 0, 9, 9);
+                //ctx.drawTexture(ICONS, ((i + 1) * 8) + 80, 20, 16 + 9 * (5 + statusU), 0, 9, 9);
             } else {
-                ctx.drawTexture(ICONS, (i * 8) + 80, 20, 16 + 9 * (4 + statusU), 0, 9, 9);
+                //ctx.drawTexture(ICONS, (i * 8) + 80, 20, 16 + 9 * (4 + statusU), 0, 9, 9);
+                this.drawHeart(ctx, HeartType.NORMAL, (i * 8) + 80, 20, false);
             }
         }
         //Armor
         for (int i = 0; i < 10; i++) {
-            ctx.drawTexture(ICONS, (i * 8) + 80, 30, 16, 9, 9, 9);
+            ctx.drawGuiTexture(ARMOR_EMPTY_TEXTURE, (i * 8) + 80, 30, 9, 9);
         }
         for (int i = 0; i < armor / 2; i++) {
             if (armor % 2 != 0 && armor / 2 == i + 1) {
-                ctx.drawTexture(ICONS, (i * 8) + 80, 30, 16 + 9 * 2, 9, 9, 9);
-                ctx.drawTexture(ICONS, ((i + 1) * 8) + 80, 30, 16 + 9, 9, 9, 9);
+                ctx.drawGuiTexture(ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
+                ctx.drawGuiTexture(ARMOR_HALF_TEXTURE, ((i + 1) * 8) + 80, 30, 9, 9);
             } else {
-                ctx.drawTexture(ICONS, (i * 8) + 80, 30, 16 + 9 * 2, 9, 9, 9);
+                ctx.drawGuiTexture(ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
             }
         }
 
