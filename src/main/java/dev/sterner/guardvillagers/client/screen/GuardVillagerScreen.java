@@ -22,13 +22,13 @@ import net.minecraft.util.math.MathHelper;
 
 public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandler> {
 
-    private static final Identifier GUARD_GUI_TEXTURES = new Identifier(GuardVillagers.MODID, "textures/gui/inventory.png");
-    private static final Identifier GUARD_FOLLOWING_ICON = new Identifier(GuardVillagers.MODID, "textures/gui/following_icons.png");
-    private static final Identifier GUARD_NOT_FOLLOWING_ICON = new Identifier(GuardVillagers.MODID, "textures/gui/not_following_icons.png");
-    private static final Identifier PATROL_ICON = new Identifier(GuardVillagers.MODID, "textures/gui/patrollingui.png");
-    private static final Identifier NOT_PATROLLING_ICON = new Identifier(GuardVillagers.MODID, "textures/gui/notpatrollingui.png");
+    private static final Identifier GUARD_GUI_TEXTURES = GuardVillagers.id("textures/gui/inventory.png");
+    private static final Identifier GUARD_FOLLOWING_ICON = GuardVillagers.id( "textures/gui/following_icons.png");
+    private static final Identifier GUARD_NOT_FOLLOWING_ICON = GuardVillagers.id("textures/gui/not_following_icons.png");
+    private static final Identifier PATROL_ICON = GuardVillagers.id( "textures/gui/patrollingui.png");
+    private static final Identifier NOT_PATROLLING_ICON = GuardVillagers.id("textures/gui/notpatrollingui.png");
 
-    private static final Identifier ICONS = new Identifier("textures/gui/icons.png");
+    private static final Identifier ICONS = GuardVillagers.id("textures/gui/icons.png");
     private final PlayerEntity player;
     private final GuardEntity guardEntity;
     private float mousePosX;
@@ -70,7 +70,8 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
         int i = (this.width - this.backgroundWidth) / 2;
         int j = (this.height - this.backgroundHeight) / 2;
         ctx.drawTexture(GUARD_GUI_TEXTURES, i, j, 0, 0, this.backgroundWidth, this.backgroundHeight);
-        InventoryScreen.drawEntity(ctx, i + 51, j + 75, 30, (float) (i + 51) - this.mousePosX, (float) (j + 75 - 50) - this.mousePosY, this.guardEntity);
+        //InventoryScreen.drawEntity(ctx, i + 51, j + 75, 30    , (float) (i + 51) - this.mousePosX, (float) (j + 75 - 50) - this.mousePosY, this.guardEntity);
+        InventoryScreen.drawEntity(ctx, i + 51, j + 75, (i + 51), (j + 75 - 50), 30, 0.0625f, this.mousePosX, this.mousePosY, this.guardEntity);
     }
 
     @Override
@@ -108,7 +109,7 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
 
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(ctx);
+        this.renderBackground(ctx, mouseX, mouseY, partialTicks);
         this.mousePosX = (float) mouseX;
         this.mousePosY = (float) mouseY;
         super.render(ctx, mouseX, mouseY, partialTicks);
@@ -135,7 +136,7 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
         }
 
         @Override
-        public void renderButton(DrawContext ctx, int mouseX, int mouseY, float partialTicks) {
+        public void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
             Identifier icon = this.requirementsForTexture() ? texture : newTexture;
             int i = this.v;
             if (this.isHovered()) {
@@ -143,8 +144,9 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
             }
 
             RenderSystem.enableDepthTest();
-            ctx.drawTexture(icon, this.getX(), this.getY(), (float) v, (float) i, this.width, this.height, textureWidth, textureHeight);
+            context.drawTexture(icon, this.getX(), this.getY(), (float) v, (float) i, this.width, this.height);
         }
+
     }
 
 }
