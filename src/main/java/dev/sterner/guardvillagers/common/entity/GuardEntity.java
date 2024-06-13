@@ -78,7 +78,7 @@ import java.util.function.Predicate;
 
 public class GuardEntity extends PathAwareEntity implements CrossbowUser, RangedAttackMob, Angerable, InventoryChangedListener, InteractionObserver {
     protected static final TrackedData<Optional<UUID>> OWNER_UNIQUE_ID = DataTracker.registerData(GuardEntity.class, TrackedDataHandlerRegistry.OPTIONAL_UUID);
-    private static final EntityAttributeModifier USE_ITEM_SPEED_PENALTY = new EntityAttributeModifier(GuardVillagers.id("Use item speed penalty"), -0.25D, EntityAttributeModifier.Operation.ADD_VALUE);
+    private static final EntityAttributeModifier USE_ITEM_SPEED_PENALTY = new EntityAttributeModifier(GuardVillagers.id("speed_penalty"), -0.25D, EntityAttributeModifier.Operation.ADD_VALUE);
     private static final TrackedData<Optional<BlockPos>> GUARD_POS = DataTracker.registerData(GuardEntity.class, TrackedDataHandlerRegistry.OPTIONAL_BLOCK_POS);
     private static final TrackedData<Boolean> PATROLLING = DataTracker.registerData(GuardEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
     private static final TrackedData<Integer> GUARD_VARIANT = DataTracker.registerData(GuardEntity.class, TrackedDataHandlerRegistry.INTEGER);
@@ -588,7 +588,30 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
         this.goalSelector.add(0, new RaiseShieldGoal(this));
         this.goalSelector.add(1, new GuardRunToEatGoal(this));
         this.goalSelector.add(2, new RangedCrossbowAttackPassiveGoal<>(this, 1.0D, 8.0F));
-        this.goalSelector.add(2, new RangedBowAttackPassiveGoal<>(this, 0.5D, 20, 15.0F));
+        this.goalSelector.add(3, new RangedBowAttackPassiveGoal<GuardEntity>(this, 0.5D, 20, 15.0F) {
+            @Override
+            public boolean canStart() {
+                return GuardEntity.this.getTarget() != null && this.isBowInMainhand() && !GuardEntity.this.isEating() && !GuardEntity.this.isBlocking();
+            }
+
+            protected boolean isBowInMainhand() {
+                return GuardEntity.this.getMainHandStack().getItem() instanceof BowItem;
+            }
+
+            @Override
+            public void tick() {
+                super.tick();
+                if (GuardEntity.this.isPatrolling()) {
+                    GuardEntity.this.getNavigation().stop();
+                    GuardEntity.this.getMoveControl().strafeTo(0.0F, 0.0F);
+                }
+            }
+
+            @Override
+            public boolean shouldContinue() {
+                return (this.canStart() || !GuardEntity.this.getNavigation().isIdle()) && this.isBowInMainhand();
+            }
+        });
         this.goalSelector.add(2, new GuardEntityMeleeGoal(this, 0.8D, true));
         this.goalSelector.add(3, new GuardEntity.FollowHeroGoal(this));
         if (GuardVillagersConfig.guardEntitysRunFromPolarBears)
