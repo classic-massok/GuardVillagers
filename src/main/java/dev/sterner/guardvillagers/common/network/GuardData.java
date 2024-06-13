@@ -10,5 +10,4 @@ public record GuardData(int guardId) {
             GuardData::guardId,
             GuardData::new
     );
-    public static final int guardId = guardId ;
 }
