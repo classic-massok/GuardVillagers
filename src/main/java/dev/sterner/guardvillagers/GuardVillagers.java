@@ -1,14 +1,15 @@
 package dev.sterner.guardvillagers;
 
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
+import dev.sterner.guardvillagers.common.entity.GuardEntityLootTables;
 import dev.sterner.guardvillagers.common.network.GuardData;
 import dev.sterner.guardvillagers.common.network.GuardFollowPacket;
 import dev.sterner.guardvillagers.common.network.GuardPatrolPacket;
 import dev.sterner.guardvillagers.common.screenhandler.GuardVillagerScreenHandler;
 import eu.midnightdust.lib.config.MidnightConfig;
-import io.netty.buffer.ByteBuf;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -29,16 +30,21 @@ import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.screen.ScreenHandlerType;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.village.VillagerProfession;
 import net.minecraft.world.World;
+import net.minecraft.world.spawner.SpecialSpawner;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.system.MathUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -89,7 +95,34 @@ public class GuardVillagers implements ModInitializer {
 
         ServerLivingEntityEvents.ALLOW_DAMAGE.register(this::onDamage);
         UseEntityCallback.EVENT.register(this::villagerConvert);
+
+        ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
+            if (entity instanceof VillagerEntity villagerEntity && villagerEntity.isNatural()) {
+                var spawnChance = MathHelper.clamp(GuardVillagersConfig.spawnChancePerVillager, 0f, 1f);
+                if (world.random.nextFloat() < spawnChance) {
+                    GuardEntity guardEntity = GUARD_VILLAGER.create(world);
+                    guardEntity.spawnWithArmor= true;
+                    guardEntity.initialize(world, world.getLocalDifficulty(villagerEntity.getBlockPos()), SpawnReason.NATURAL, null);
+                    guardEntity.refreshPositionAndAngles(villagerEntity.getBlockPos(), 0.0f, 0.0f);
+
+                    int i = GuardEntity.getRandomTypeForBiome(guardEntity.getWorld(), guardEntity.getBlockPos());
+                    guardEntity.setGuardVariant(i);
+                    guardEntity.setPersistent();
+                    guardEntity.setCustomName(villagerEntity.getCustomName());
+                    guardEntity.setCustomNameVisible(villagerEntity.isCustomNameVisible());
+                    guardEntity.setEquipmentDropChance(EquipmentSlot.HEAD, 100.0F);
+                    guardEntity.setEquipmentDropChance(EquipmentSlot.CHEST, 100.0F);
+                    guardEntity.setEquipmentDropChance(EquipmentSlot.FEET, 100.0F);
+                    guardEntity.setEquipmentDropChance(EquipmentSlot.LEGS, 100.0F);
+                    guardEntity.setEquipmentDropChance(EquipmentSlot.MAINHAND, 100.0F);
+                    guardEntity.setEquipmentDropChance(EquipmentSlot.OFFHAND, 100.0F);
+
+                    world.spawnEntityAndPassengers(guardEntity);
+                }
+            }
+        });
     }
+
 
     private boolean onDamage(LivingEntity entity, DamageSource source, float amount) {
         Entity attacker = source.getAttacker();
