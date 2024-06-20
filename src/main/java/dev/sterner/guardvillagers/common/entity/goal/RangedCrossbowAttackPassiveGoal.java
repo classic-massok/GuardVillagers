@@ -9,6 +9,7 @@ import net.minecraft.entity.ai.RangedAttackMob;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.projectile.ProjectileUtil;
+import net.minecraft.entity.raid.RaiderEntity;
 import net.minecraft.item.CrossbowItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -155,7 +156,7 @@ public class RangedCrossbowAttackPassiveGoal<T extends PathAwareEntity & RangedA
             } else if (this.crossbowState == CrossbowState.READY_TO_ATTACK && canSee) {
                 this.mob.shootAt(livingentity, 1.0F);
                 ItemStack itemstack1 = this.mob.getStackInHand(GuardVillagers.getHandWith(this.mob, item -> item instanceof CrossbowItem));
-                ((LivingEntity)livingentity).setCurrentHand(ProjectileUtil.getHandPossiblyHolding(livingentity, Items.CROSSBOW));
+                ((LivingEntity)this.mob).setCurrentHand(ProjectileUtil.getHandPossiblyHolding(livingentity, Items.CROSSBOW));
                 ((CrossbowUser)this.mob).setCharging(false);
                 this.crossbowState = CrossbowState.UNCHARGED;
             }
