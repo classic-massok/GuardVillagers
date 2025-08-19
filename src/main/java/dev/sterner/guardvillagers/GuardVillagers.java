@@ -1,7 +1,6 @@
 package dev.sterner.guardvillagers;
 
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
-import dev.sterner.guardvillagers.common.entity.GuardEntityLootTables;
 import dev.sterner.guardvillagers.common.network.GuardData;
 import dev.sterner.guardvillagers.common.network.GuardFollowPacket;
 import dev.sterner.guardvillagers.common.network.GuardPatrolPacket;
@@ -15,7 +14,6 @@ import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
-import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.entity.*;
 import net.minecraft.entity.ai.brain.MemoryModuleType;
@@ -29,8 +27,9 @@ import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.ActionResult;
@@ -40,11 +39,8 @@ import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.village.VillagerProfession;
 import net.minecraft.world.World;
-import net.minecraft.world.spawner.SpecialSpawner;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.system.MathUtil;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -54,10 +50,26 @@ public class GuardVillagers implements ModInitializer {
     public static final ScreenHandlerType<GuardVillagerScreenHandler> GUARD_SCREEN_HANDLER =
             new ExtendedScreenHandlerType<>((syncId, inventory, data) -> new GuardVillagerScreenHandler(syncId, inventory, data), GuardData.PACKET_CODEC);
 
-    public static final EntityType<GuardEntity> GUARD_VILLAGER = Registry.register(Registries.ENTITY_TYPE, id("guard"),
-            FabricEntityTypeBuilder.create(SpawnGroup.CREATURE, GuardEntity::new).dimensions(EntityDimensions.fixed(0.6f, 1.8f)).build());
+    public static final RegistryKey<EntityType<?>> GUARD_VILLAGER_KEY =
+            RegistryKey.of(RegistryKeys.ENTITY_TYPE, id("guard"));
 
-    public static final Item GUARD_SPAWN_EGG = new SpawnEggItem(GUARD_VILLAGER, 5651507, 8412749, new Item.Settings());
+    public static final EntityType<GuardEntity> GUARD_VILLAGER =
+            Registry.register(
+                    Registries.ENTITY_TYPE,
+                    GUARD_VILLAGER_KEY,
+                    EntityType.Builder.create(GuardEntity::new, SpawnGroup.CREATURE)
+                            .dimensions(0.6f, 1.8f) // ✅ width, height directly
+                            .build(GUARD_VILLAGER_KEY)
+            );
+
+    public static final RegistryKey<Item> GUARD_SPAWN_EGG_KEY =
+            RegistryKey.of(RegistryKeys.ITEM, id("guard_spawn_egg"));
+
+    public static final Item GUARD_SPAWN_EGG = Items.register(
+            GUARD_SPAWN_EGG_KEY,
+            (Item.Settings settings) -> new SpawnEggItem(GUARD_VILLAGER, settings),
+            new Item.Settings()
+    );
 
     public static Hand getHandWith(LivingEntity livingEntity, Predicate<Item> itemPredicate) {
         return itemPredicate.test(livingEntity.getMainHandStack().getItem()) ? Hand.MAIN_HAND : Hand.OFF_HAND;
@@ -76,7 +88,6 @@ public class GuardVillagers implements ModInitializer {
         MidnightConfig.init(MODID, GuardVillagersConfig.class);
         FabricDefaultAttributeRegistry.register(GUARD_VILLAGER, GuardEntity.createAttributes());
 
-        Registry.register(Registries.ITEM, id("guard_spawn_egg"), GUARD_SPAWN_EGG);
         Registry.register(Registries.SCREEN_HANDLER, id("guard_screen"), GUARD_SCREEN_HANDLER);
         Registry.register(Registries.SOUND_EVENT, id("entity.guard.ambient"), GUARD_AMBIENT);
         Registry.register(Registries.SOUND_EVENT, id( "entity.guard.hurt"), GUARD_HURT);
@@ -100,7 +111,12 @@ public class GuardVillagers implements ModInitializer {
             if (entity instanceof VillagerEntity villagerEntity && villagerEntity.isNatural()) {
                 var spawnChance = MathHelper.clamp(GuardVillagersConfig.spawnChancePerVillager, 0f, 1f);
                 if (world.random.nextFloat() < spawnChance) {
-                    GuardEntity guardEntity = GUARD_VILLAGER.create(world);
+
+                    GuardEntity guardEntity = GUARD_VILLAGER.create(world, SpawnReason.MOB_SUMMONED);
+                    if (guardEntity == null) {
+                        return;
+                    }
+
                     guardEntity.spawnWithArmor= true;
                     guardEntity.initialize(world, world.getLocalDifficulty(villagerEntity.getBlockPos()), SpawnReason.NATURAL, null);
                     guardEntity.refreshPositionAndAngles(villagerEntity.getBlockPos(), 0.0f, 0.0f);
@@ -173,7 +189,7 @@ public class GuardVillagers implements ModInitializer {
     private void convertVillager(VillagerEntity villagerEntity, PlayerEntity player, World world) {
         player.swingHand(Hand.MAIN_HAND);
         ItemStack itemstack = player.getEquippedStack(EquipmentSlot.MAINHAND);
-        GuardEntity guard = GUARD_VILLAGER.create(world);
+        GuardEntity guard = GUARD_VILLAGER.create(world, SpawnReason.MOB_SUMMONED);
         if (guard == null)
             return;
         if (player.getWorld().isClient()) {

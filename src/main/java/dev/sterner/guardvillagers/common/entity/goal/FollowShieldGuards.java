@@ -5,6 +5,7 @@ import net.minecraft.entity.ai.NoPenaltyTargeting;
 import net.minecraft.entity.ai.TargetPredicate;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.item.Items;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,18 +29,28 @@ public class FollowShieldGuards extends Goal {
         if (!list.isEmpty()) {
             for (GuardEntity guard : list) {
                 if (!guard.isInvisible() && guard.getOffHandStack().getItem() == Items.SHIELD && guard.isBlocking() // Might create compatibility problems
-                        && this.taskOwner.getWorld().getTargets(GuardEntity.class, NEARBY_GUARDS.setBaseMaxDistance(3.0D), guard,
-                                this.taskOwner.getBoundingBox().expand(5.0D))
-                        .size() < 5) {
-                    this.guardtofollow = guard;
-                    Vec3d vec3d = this.getPosition();
-                    if (vec3d == null) {
+                ) {
+                    if (!(this.taskOwner.getWorld() instanceof ServerWorld serverWorld)) {
                         return false;
-                    } else {
-                        this.x = vec3d.x;
-                        this.y = vec3d.y;
-                        this.z = vec3d.z;
-                        return true;
+                    }
+
+                    List<GuardEntity> nearby = this.taskOwner.getWorld().getEntitiesByClass(
+                            GuardEntity.class,
+                            this.taskOwner.getBoundingBox().expand(5.0D),
+                            g -> NEARBY_GUARDS.test(serverWorld, guard, g)
+                    );
+
+                    if (nearby.size() < 5) {
+                        this.guardtofollow = guard;
+                        Vec3d vec3d = this.getPosition();
+                        if (vec3d == null) {
+                            return false;
+                        } else {
+                            this.x = vec3d.x;
+                            this.y = vec3d.y;
+                            this.z = vec3d.z;
+                            return true;
+                        }
                     }
                 }
             }

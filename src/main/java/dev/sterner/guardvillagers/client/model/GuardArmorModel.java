@@ -1,10 +1,11 @@
 package dev.sterner.guardvillagers.client.model;
 
-import dev.sterner.guardvillagers.common.entity.GuardEntity;
+import dev.sterner.guardvillagers.client.render.state.GuardBipedRenderState;
 import net.minecraft.client.model.*;
+import net.minecraft.client.render.entity.model.ArmorEntityModel;
 import net.minecraft.client.render.entity.model.BipedEntityModel;
 
-public class GuardArmorModel extends BipedEntityModel<GuardEntity> {
+public class GuardArmorModel extends ArmorEntityModel<GuardBipedRenderState> {
     public GuardArmorModel(ModelPart part) {
         super(part);
     }

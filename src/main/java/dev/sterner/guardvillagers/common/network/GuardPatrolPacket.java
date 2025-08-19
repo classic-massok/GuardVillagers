@@ -17,7 +17,7 @@ public record GuardPatrolPacket(int guardId, boolean pressed) implements CustomP
     public static final CustomPayload.Id<GuardPatrolPacket> ID = new CustomPayload.Id<>(Identifier.of(GuardVillagers.MODID, "guard_patrol"));
     public static final PacketCodec<RegistryByteBuf, GuardPatrolPacket> PACKET_CODEC = PacketCodec.tuple(
             PacketCodecs.INTEGER, GuardPatrolPacket::guardId,
-            PacketCodecs.BOOL, GuardPatrolPacket::pressed,
+            PacketCodecs.BOOLEAN, GuardPatrolPacket::pressed,
             GuardPatrolPacket::new
     );
 

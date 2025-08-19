@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Pair;
 import dev.sterner.guardvillagers.GuardVillagers;
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
 import dev.sterner.guardvillagers.common.network.GuardData;
+import net.minecraft.client.util.SpriteIdentifier;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -14,6 +15,7 @@ import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.Nullable;
 
 public class GuardVillagerScreenHandler extends ScreenHandler {
 
@@ -57,11 +59,6 @@ public class GuardVillagerScreenHandler extends ScreenHandler {
             public boolean canTakeItems(PlayerEntity playerIn) {
                 return GuardVillagers.hotvChecker(playerInventory.player, guardEntity);
             }
-
-            @Override
-            public Pair<Identifier, Identifier> getBackgroundSprite() {
-                return Pair.of(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, PlayerScreenHandler.EMPTY_HELMET_SLOT_TEXTURE);
-            }
         });
         this.addSlot(new Slot(guardInventory, 1, 8, 26) {
             @Override
@@ -83,11 +80,6 @@ public class GuardVillagerScreenHandler extends ScreenHandler {
             @Override
             public boolean canTakeItems(PlayerEntity playerIn) {
                 return GuardVillagers.hotvChecker(playerInventory.player, guardEntity);
-            }
-
-            @Override
-            public Pair<Identifier, Identifier> getBackgroundSprite() {
-                return Pair.of(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, PlayerScreenHandler.EMPTY_CHESTPLATE_SLOT_TEXTURE);
             }
         });
         this.addSlot(new Slot(guardInventory, 2, 8, 44) {
@@ -111,11 +103,6 @@ public class GuardVillagerScreenHandler extends ScreenHandler {
             public boolean canTakeItems(PlayerEntity playerIn) {
                 return GuardVillagers.hotvChecker(playerInventory.player, guardEntity);
             }
-
-            @Override
-            public Pair<Identifier, Identifier> getBackgroundSprite() {
-                return Pair.of(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, PlayerScreenHandler.EMPTY_LEGGINGS_SLOT_TEXTURE);
-            }
         });
         this.addSlot(new Slot(guardInventory, 3, 8, 62) {
             @Override
@@ -138,11 +125,6 @@ public class GuardVillagerScreenHandler extends ScreenHandler {
             public boolean canTakeItems(PlayerEntity playerIn) {
                 return GuardVillagers.hotvChecker(playerInventory.player, guardEntity);
             }
-
-            @Override
-            public Pair<Identifier, Identifier> getBackgroundSprite() {
-                return Pair.of(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, PlayerScreenHandler.EMPTY_BOOTS_SLOT_TEXTURE);
-            }
         });
         this.addSlot(new Slot(guardInventory, 4, 77, 62) {
             @Override
@@ -159,11 +141,6 @@ public class GuardVillagerScreenHandler extends ScreenHandler {
             @Override
             public boolean canTakeItems(PlayerEntity playerIn) {
                 return GuardVillagers.hotvChecker(playerInventory.player, guardEntity);
-            }
-
-            @Override
-            public Pair<Identifier, Identifier> getBackgroundSprite() {
-                return Pair.of(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE, PlayerScreenHandler.EMPTY_OFFHAND_ARMOR_SLOT);
             }
         });
 

@@ -9,7 +9,6 @@ import net.minecraft.entity.ai.RangedAttackMob;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.projectile.ProjectileUtil;
-import net.minecraft.entity.raid.RaiderEntity;
 import net.minecraft.item.CrossbowItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -100,7 +99,10 @@ public class RangedCrossbowAttackPassiveGoal<T extends PathAwareEntity & RangedA
             double d0 = this.mob.squaredDistanceTo(livingentity);
             double d1 = livingentity.distanceTo(this.mob);
             if (d1 <= 4.0D) {
-                this.mob.getMoveControl().strafeTo(this.mob.isUsingItem() ? -0.5F : -3.0F, 0.0F);
+                float[] strafeOptions = {-1.0F, -0.5F, 0.5F, 1.0F};
+                float forward = this.mob.isUsingItem() ? -0.5F : 3.0F;
+                float sideways = strafeOptions[this.mob.getRandom().nextInt(strafeOptions.length)];
+                this.mob.getMoveControl().strafeTo(forward, sideways);
                 this.mob.lookAtEntity(livingentity, 30.0F, 30.0F);
             }
             if (this.mob.getRandom().nextInt(50) == 0) {

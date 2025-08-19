@@ -1,18 +1,21 @@
 package dev.sterner.guardvillagers.client.model;
 
+import dev.sterner.guardvillagers.client.render.state.GuardBipedRenderState;
+import dev.sterner.guardvillagers.client.render.state.GuardPlayerRenderState;
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
 import net.minecraft.client.model.*;
 import net.minecraft.client.render.entity.model.BipedEntityModel;
+import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.ArmorItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.RangedWeaponItem;
 import net.minecraft.util.Arm;
 import net.minecraft.util.Hand;
-import net.minecraft.util.UseAction;
+import net.minecraft.item.consume.UseAction;
 import net.minecraft.util.math.MathHelper;
 
-public class GuardVillagerModel extends BipedEntityModel<GuardEntity> {
+public class GuardVillagerModel extends BipedEntityModel<GuardBipedRenderState> {
     public ModelPart Nose = this.head.getChild("nose");
     public ModelPart quiver = this.body.getChild("quiver");
     public ModelPart ArmLShoulderPad = this.rightArm.getChild("shoulderPad_left");
@@ -64,33 +67,34 @@ public class GuardVillagerModel extends BipedEntityModel<GuardEntity> {
     }
 
     @Override
-    public void setAngles(GuardEntity entityIn, float limbSwing, float limbSwingAmount, float ageInTicks, float netbipedHeadYaw, float bipedHeadPitch) {
-        super.setAngles(entityIn, limbSwing, limbSwingAmount, ageInTicks, netbipedHeadYaw, bipedHeadPitch);
-        ItemStack itemstack = entityIn.getStackInHand(Hand.MAIN_HAND);
-        boolean isHoldingShootable = itemstack.getItem() instanceof RangedWeaponItem;
-        this.quiver.visible = isHoldingShootable;
-        boolean hasChestplate = entityIn.getEquippedStack(EquipmentSlot.CHEST).getItem() instanceof ArmorItem;
-        this.ArmLShoulderPad.visible = !hasChestplate;
-        this.ArmRShoulderPad.visible = !hasChestplate;
-        if (entityIn.getKickTicks() > 0) {
-            float f1 = 1.0F - (float) MathHelper.abs(10 - 2 * entityIn.getKickTicks()) / 10.0F;
+    public void setAngles(GuardBipedRenderState state) {
+        super.setAngles(state);
+
+        int kickTicks = (state instanceof GuardBipedRenderState g) ? g.kickTicks : 0;
+
+        if (kickTicks > 0) {
+            float f1 = 1.0F - (float) MathHelper.abs(10 - 2 * kickTicks) / 10.0F;
             this.rightLeg.pitch = MathHelper.lerp(f1, this.rightLeg.pitch, -1.40F);
         }
-        if (entityIn.getMainArm() == Arm.RIGHT) {
-            this.eatingAnimationRightHand(Hand.MAIN_HAND, entityIn, ageInTicks);
-            this.eatingAnimationLeftHand(Hand.OFF_HAND, entityIn, ageInTicks);
+
+        Arm mainArm = state.mainArm;
+        float ageInTicks = state.age;
+
+        if (mainArm == Arm.RIGHT) {
+            this.eatingAnimationRightHand(Hand.MAIN_HAND, state, ageInTicks);
+            this.eatingAnimationLeftHand(Hand.OFF_HAND, state, ageInTicks);
         } else {
-            this.eatingAnimationRightHand(Hand.OFF_HAND, entityIn, ageInTicks);
-            this.eatingAnimationLeftHand(Hand.MAIN_HAND, entityIn, ageInTicks);
+            this.eatingAnimationRightHand(Hand.OFF_HAND, state, ageInTicks);
+            this.eatingAnimationLeftHand(Hand.MAIN_HAND, state, ageInTicks);
         }
     }
 
-    public void eatingAnimationRightHand(Hand hand, GuardEntity entity, float ageInTicks) {
-        ItemStack itemstack = entity.getStackInHand(hand);
+    public void eatingAnimationRightHand(Hand hand, GuardBipedRenderState state, float ageInTicks) {
+        ItemStack itemstack = state.getStackInHand(hand);
         boolean drinkingoreating = itemstack.getUseAction() == UseAction.EAT
                 || itemstack.getUseAction() == UseAction.DRINK;
-        if (entity.isEating() && drinkingoreating
-                || entity.getItemUseTimeLeft() > 0 && drinkingoreating && entity.getActiveHand() == hand) {
+        if ((state.isEating && drinkingoreating)
+                || (state.itemUseTimeLeft > 0 && drinkingoreating && state.activeHand == hand)) {
             this.rightArm.yaw = -0.5F;
             this.rightArm.pitch = -1.3F;
             this.rightArm.roll = MathHelper.cos(ageInTicks) * 0.1F;
@@ -100,12 +104,12 @@ public class GuardVillagerModel extends BipedEntityModel<GuardEntity> {
         }
     }
 
-    public void eatingAnimationLeftHand(Hand hand, GuardEntity entity, float ageInTicks) {
-        ItemStack itemstack = entity.getStackInHand(hand);
+    public void eatingAnimationLeftHand(Hand hand, GuardBipedRenderState state, float ageInTicks) {
+        ItemStack itemstack = state.getStackInHand(hand);
         boolean drinkingoreating = itemstack.getUseAction() == UseAction.EAT
                 || itemstack.getUseAction() == UseAction.DRINK;
-        if (entity.isEating() && drinkingoreating
-                || entity.getItemUseTimeLeft() > 0 && drinkingoreating && entity.getActiveHand() == hand) {
+        if ((state.isEating && drinkingoreating)
+                || (state.itemUseTimeLeft > 0 && drinkingoreating && state.activeHand == hand)) {
             this.leftArm.yaw = 0.5F;
             this.leftArm.pitch = -1.3F;
             this.leftArm.roll = MathHelper.cos(ageInTicks) * 0.1F;

@@ -2,19 +2,19 @@ package dev.sterner.guardvillagers.common.entity.goal;
 
 import dev.sterner.guardvillagers.GuardVillagers;
 import net.minecraft.component.type.PotionContentsComponent;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.ai.TargetPredicate;
 import net.minecraft.entity.ai.brain.MemoryModuleType;
-import net.minecraft.entity.ai.brain.task.LookTargetUtil;
+import net.minecraft.entity.ai.brain.EntityLookTarget;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.thrown.PotionEntity;
-import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.potion.Potion;
 import net.minecraft.potion.Potions;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.MathHelper;
@@ -90,7 +90,10 @@ public class HealGuardAndPlayerGoal extends Goal {
         } else {
             this.seeTime = 0;
         }
-        LookTargetUtil.lookAt(healer, mob);
+        // tell the brain who to look at
+        healer.getBrain().remember(MemoryModuleType.LOOK_TARGET, new EntityLookTarget(mob, true));
+        // optional: also snap the head immediately (keeps old behavior feel)
+        healer.getLookControl().lookAt(mob, 30.0F, 30.0F);
         if (!(d0 > (double) this.maxAttackDistance) && this.seeTime >= 5) {
             this.healer.getNavigation().stop();
         } else {
@@ -124,7 +127,11 @@ public class HealGuardAndPlayerGoal extends Goal {
         } else {
             potion = Potions.REGENERATION;
         }
-        PotionEntity potionentity = new PotionEntity(healer.getWorld(), healer);
+        PotionEntity potionentity = EntityType.POTION.create(healer.getWorld(), SpawnReason.TRIGGERED);
+        if (potionentity == null) {
+            return;
+        }
+        potionentity.setOwner(healer);
         potionentity.setItem(PotionContentsComponent.createStack(Items.SPLASH_POTION, potion));
         potionentity.setPitch(-20.0F);
         potionentity.setVelocity(d0, d1 + (double) (f * 0.2F), d2, 0.75F, 8.0F);

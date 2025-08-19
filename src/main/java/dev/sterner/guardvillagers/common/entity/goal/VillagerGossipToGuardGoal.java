@@ -3,7 +3,7 @@ package dev.sterner.guardvillagers.common.entity.goal;
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.brain.MemoryModuleType;
-import net.minecraft.entity.ai.brain.task.LookTargetUtil;
+import net.minecraft.entity.ai.brain.EntityLookTarget;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.passive.VillagerEntity;
 
@@ -45,7 +45,10 @@ public class VillagerGossipToGuardGoal extends Goal {
     public void tick() {
         this.villager.getBrain().remember(MemoryModuleType.INTERACTION_TARGET, guard);
         if (!nearbyVillagersInteractingWithGuards() && this.villager.getBrain().hasMemoryModule(MemoryModuleType.INTERACTION_TARGET) && this.villager.getBrain().getOptionalRegisteredMemory(MemoryModuleType.INTERACTION_TARGET).get().equals(guard)) {
-            LookTargetUtil.lookAt(villager, guard);
+            // tell the brain who to look at
+            villager.getBrain().remember(MemoryModuleType.LOOK_TARGET, new EntityLookTarget(guard, true));
+            // optional: also snap the head immediately (keeps old behavior feel)
+            villager.getLookControl().lookAt(guard, 30.0F, 30.0F);
             if (this.villager.distanceTo(guard) > 2.0D) {
                 this.villager.getNavigation().startMovingTo(guard, 0.5D);
             } else {

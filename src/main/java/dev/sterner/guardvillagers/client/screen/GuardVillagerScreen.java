@@ -80,12 +80,23 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
 
     @Override
     protected void drawBackground(DrawContext ctx, float delta, int mouseX, int mouseY) {
-        RenderSystem.setShader(GameRenderer::getPositionTexProgram);
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        // No explicit RenderSystem.setShader(...) needed in 1.21.x
+        // The default color is already white, so setShaderColor is unnecessary too.
+
         int i = (this.width - this.backgroundWidth) / 2;
         int j = (this.height - this.backgroundHeight) / 2;
-        ctx.drawTexture(GUARD_GUI_TEXTURES, i, j, 0, 0, this.backgroundWidth, this.backgroundHeight);
-        //InventoryScreen.drawEntity(ctx, i + 51, j + 75, 30    , (float) (i + 51) - this.mousePosX, (float) (j + 75 - 50) - this.mousePosY, this.guardEntity);
+
+        // draw the full GUI texture (no manual shader calls needed in 1.21.x)
+        ctx.drawTexture(
+                net.minecraft.client.render.RenderLayer::getGuiTextured, // RenderLayer supplier
+                GUARD_GUI_TEXTURES,
+                i, j,                  // x, y on screen
+                0f, 0f,             // u, v in texture
+                this.backgroundWidth,  // region width
+                this.backgroundHeight, // region height
+                256, 256               // full texture size (set to your PNG size if not 256x256)
+        );
+
         InventoryScreen.drawEntity(ctx, i + 51, j + 75, (i + 51), (j + 75 - 50), 30, 0.0625f, this.mousePosX, this.mousePosY, this.guardEntity);
     }
 
@@ -105,7 +116,7 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
 
     private void drawHeart(DrawContext context, HeartType type, int x, int y, boolean half) {
         RenderSystem.enableBlend();
-        context.drawGuiTexture(type.getTexture(half), x, y, 9, 9);
+        context.drawGuiTexture(net.minecraft.client.render.RenderLayer::getGuiTextured, type.getTexture(half), x, y, 9, 9);
         RenderSystem.disableBlend();
     }
 
@@ -136,14 +147,14 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
         }
         //Armor
         for (int i = 0; i < 10; i++) {
-            ctx.drawGuiTexture(ARMOR_EMPTY_TEXTURE, (i * 8) + 80, 30, 9, 9);
+            ctx.drawGuiTexture(net.minecraft.client.render.RenderLayer::getGuiTextured, ARMOR_EMPTY_TEXTURE, (i * 8) + 80, 30, 9, 9);
         }
         for (int i = 0; i < armor / 2; i++) {
             if (armor % 2 != 0 && armor / 2 == i + 1) {
-                ctx.drawGuiTexture(ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
-                ctx.drawGuiTexture(ARMOR_HALF_TEXTURE, ((i + 1) * 8) + 80, 30, 9, 9);
+                ctx.drawGuiTexture(net.minecraft.client.render.RenderLayer::getGuiTextured, ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
+                ctx.drawGuiTexture(net.minecraft.client.render.RenderLayer::getGuiTextured, ARMOR_HALF_TEXTURE, ((i + 1) * 8) + 80, 30, 9, 9);
             } else {
-                ctx.drawGuiTexture(ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
+                ctx.drawGuiTexture(net.minecraft.client.render.RenderLayer::getGuiTextured, ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
             }
         }
 
@@ -181,7 +192,7 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
         public void renderWidget(DrawContext graphics, int mouseX, int mouseY, float partialTicks) {
             ButtonTextures icon = this.requirementsForTexture() ? this.texture : this.newTexture;
             Identifier resourcelocation = icon.get(this.isFocused(), this.isSelected());
-            graphics.drawGuiTexture(resourcelocation, this.getX(), this.getY(), this.width, this.height);
+            graphics.drawGuiTexture(net.minecraft.client.render.RenderLayer::getGuiTextured, resourcelocation, this.getX(), this.getY(), this.width, this.height);
         }
     }
 
