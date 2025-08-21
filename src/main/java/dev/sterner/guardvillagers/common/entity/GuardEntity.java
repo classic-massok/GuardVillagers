@@ -134,7 +134,7 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
      * Credit - SmellyModder for Biome Specific Textures
      */
     public static int getRandomTypeForBiome(WorldAccess world, BlockPos pos) {
-        VillagerType type = VillagerType.forBiome(world.getBiome(pos));
+        RegistryKey<VillagerType> type = VillagerType.forBiome(world.getBiome(pos));
         if (type == VillagerType.SNOW) return 6;
         else if (type == VillagerType.TAIGA) return 5;
         else if (type == VillagerType.JUNGLE) return 4;
