@@ -566,8 +566,8 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
 
     @Override
     protected void initEquipment(Random random, LocalDifficulty localDifficulty) {
-        this.handDropChances[EquipmentSlot.MAINHAND.getEntitySlotId()] = 100.0F;
-        this.handDropChances[EquipmentSlot.OFFHAND.getEntitySlotId()] = 100.0F;
+        this.setEquipmentDropChance(EquipmentSlot.MAINHAND, 100.0F);
+        this.setEquipmentDropChance(EquipmentSlot.OFFHAND, 100.0F);
         this.spawnWithArmor = true;
     }
 
