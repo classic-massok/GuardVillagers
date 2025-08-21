@@ -55,7 +55,7 @@ public class GuardVillagerModel extends BipedEntityModel<GuardBipedRenderState> 
         rightArm.addChild("shoulderPad_left",
                 ModelPartBuilder.create().uv(72, 33).cuboid(-5.0F, 0.0F, -3.0F, 5, 3, 6, new Dilation(0.0F)),
                 ModelTransform.pivot(0.5F, -3.5F, 0.0F));
-        partdefinition.addChild("hat", ModelPartBuilder.create().uv(0, 0).cuboid(-4.5F, -11.0F, -4.5F, 9,
+        head.addChild("hat", ModelPartBuilder.create().uv(0, 0).cuboid(-4.5F, -11.0F, -4.5F, 9,
                 11, 9, new Dilation(0.0F)), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
         return TexturedModelData.of(meshdefinition, 128, 128);
     }
