@@ -169,7 +169,7 @@ public class GuardVillagers implements ModInitializer {
                 Entity target = entityHitResult.getEntity();
                 if (target instanceof VillagerEntity villagerEntity) {
                     if (!villagerEntity.isBaby()) {
-                        if (villagerEntity.getVillagerData().getProfession() == VillagerProfession.NONE || villagerEntity.getVillagerData().getProfession() == VillagerProfession.NITWIT) {
+                        if (villagerEntity.getVillagerData().profession().matchesKey(VillagerProfession.NONE) || villagerEntity.getVillagerData().profession().matchesKey(VillagerProfession.NITWIT)) {
                             if (!GuardVillagersConfig.convertVillagerIfHaveHotv || player.hasStatusEffect(StatusEffects.HERO_OF_THE_VILLAGE) && GuardVillagersConfig.convertVillagerIfHaveHotv) {
                                 convertVillager(villagerEntity, player, world);
                                 if (!player.getAbilities().creativeMode)
