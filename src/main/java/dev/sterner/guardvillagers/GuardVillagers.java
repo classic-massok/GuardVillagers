@@ -29,6 +29,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.tag.ItemTags;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
@@ -43,7 +44,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.function.Predicate;
-// TODO: Fix errors
+
 public class GuardVillagers implements ModInitializer {
     public static final String MODID = "guardvillagers";
 
@@ -164,7 +165,7 @@ public class GuardVillagers implements ModInitializer {
 
     private ActionResult villagerConvert(PlayerEntity player, World world, Hand hand, Entity entity, @Nullable EntityHitResult entityHitResult) {
         ItemStack itemStack = player.getStackInHand(hand);
-        if ((itemStack.getItem() instanceof SwordItem || itemStack.getItem() instanceof CrossbowItem) && player.isSneaking()) {
+        if ((itemStack.isIn(ItemTags.SWORDS) || itemStack.getItem() instanceof CrossbowItem) && player.isSneaking()) {
             if (entityHitResult != null) {
                 Entity target = entityHitResult.getEntity();
                 if (target instanceof VillagerEntity villagerEntity) {
