@@ -14,7 +14,7 @@ import net.minecraft.village.VillagerProfession;
 
 import java.util.EnumSet;
 import java.util.List;
-// TODO: Fix errors
+
 public class HealGolemGoal extends Goal {
     public final MobEntity healer;
     public IronGolemEntity golem;
