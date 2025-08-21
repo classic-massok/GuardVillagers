@@ -26,7 +26,7 @@ import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
-// TODO: Fix errors
+
 public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandler> {
     private static final Identifier GUARD_GUI_TEXTURES = GuardVillagers.id("textures/gui/inventory.png");
     /*
@@ -115,9 +115,7 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
     private static final Identifier ARMOR_FULL_TEXTURE = Identifier.ofVanilla("hud/armor_full");
 
     private void drawHeart(DrawContext context, HeartType type, int x, int y, boolean half) {
-        RenderSystem.enableBlend();
         context.drawGuiTexture(net.minecraft.client.render.RenderLayer::getGuiTextured, type.getTexture(half), x, y, 9, 9);
-        RenderSystem.disableBlend();
     }
 
     @Override
