@@ -2,9 +2,9 @@ package dev.sterner.guardvillagers.common.entity;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.mojang.serialization.Dynamic;
 import dev.sterner.guardvillagers.GuardVillagers;
 import dev.sterner.guardvillagers.GuardVillagersConfig;
+import dev.sterner.guardvillagers.common.entity.util.ItemUtils;
 import dev.sterner.guardvillagers.common.network.GuardData;
 import dev.sterner.guardvillagers.common.screenhandler.GuardVillagerScreenHandler;
 import dev.sterner.guardvillagers.common.entity.goal.*;
@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.EnchantmentEffectComponentTypes;
 import net.minecraft.component.type.DamageResistantComponent;
+import net.minecraft.component.type.EquippableComponent;
 import net.minecraft.component.type.ItemEnchantmentsComponent;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -72,6 +73,8 @@ import net.minecraft.village.VillagerGossips;
 import net.minecraft.village.VillagerType;
 import net.minecraft.world.*;
 import org.jetbrains.annotations.Nullable;
+import net.minecraft.nbt.NbtElement;
+import net.minecraft.util.Uuids;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -218,14 +221,10 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
     @Override
     public void readCustomDataFromNbt(NbtCompound nbt) {
         super.readCustomDataFromNbt(nbt);
-        UUID uuid = nbt.containsUuid("Owner") ? nbt.getUuid("Owner") : null;
-        if (uuid != null) {
-            try {
-                this.setOwnerId(uuid);
-            } catch (Throwable throwable) {
-                this.setOwnerId(null);
-            }
-        }
+
+        UUID owner = readUuidFlexible(nbt, "Owner");
+        this.setOwnerId(owner); // accepts null
+
         this.setGuardEntityVariant(nbt.getInt("Type").orElseThrow());
         this.kickTicks = nbt.getInt("KickTicks").orElseThrow();
         this.setFollowing(nbt.getBoolean("Following").orElseThrow());
@@ -240,41 +239,121 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
             int x = nbt.getInt("PatrolPosX").orElseThrow();
             int y = nbt.getInt("PatrolPosY").orElseThrow();
             int z = nbt.getInt("PatrolPosZ").orElseThrow();
-            this.dataTracker.set(GUARD_POS, Optional.ofNullable(new BlockPos(x, y, z)));
+            this.dataTracker.set(GUARD_POS, Optional.of(new BlockPos(x, y, z)));
         }
-        NbtList listtag = nbt.getList("Gossips", 10);
-        this.gossips.deserialize(new Dynamic<>(NbtOps.INSTANCE, listtag));
-        NbtList listnbt = nbt.getList("Inventory", 9);
-        for (int i = 0; i < listnbt.size(); ++i) {
-            NbtCompound nbtnbt = listnbt.getCompound(i);
-            int j = nbtnbt.getByte("Slot") & 255;
-            this.guardInventory.setStack(j, ItemStack.fromNbt(this.getRegistryManager(), nbtnbt).get());
+
+        NbtElement gossipsTag = nbt.get("Gossips");
+        if (gossipsTag != null) {
+            VillagerGossips decoded = VillagerGossips.CODEC
+                    .parse(NbtOps.INSTANCE, gossipsTag)
+                    .result()
+                    .orElseGet(VillagerGossips::new);
+
+            // replace contents of your existing container
+            this.gossips.clear();
+            this.gossips.add(decoded);
         }
-        if (nbt.contains("ArmorItems", 9)) {
-            NbtList armorItems = nbt.getList("ArmorItems", 10);
-            for (int i = 0; i < this.armorItems.size(); ++i) {
-                ItemStack stack = ItemStack.fromNbtOrEmpty(this.getRegistryManager(), armorItems.getCompound(i));
+
+        NbtList inventoryList = nbt.getListOrEmpty("Inventory");
+        for (int i = 0; i < inventoryList.size(); ++i) {
+            NbtCompound entry = inventoryList.getCompoundOrEmpty(i);
+            if (entry == null) continue; // belt-and-suspenders
+
+            // Your mappings return Optional<Byte> here — don’t orElseThrow()
+            var slotOpt = entry.getByte("Slot");
+            if (slotOpt.isEmpty()) continue;
+
+            int slot = Byte.toUnsignedInt(slotOpt.get());
+            if (slot >= this.guardInventory.size()) continue;
+
+            // In your env, fromNbt(...) returns Optional<ItemStack>
+            var stackOpt = ItemStack.fromNbt(this.getRegistryManager(), entry);
+            if (stackOpt != null && stackOpt.isPresent()) {
+                ItemStack stack = stackOpt.get();
                 if (!stack.isEmpty()) {
-                    int index = GuardEntity.slotToInventoryIndex(getPreferredEquipmentSlot(ItemStack.fromNbt(this.getRegistryManager(), armorItems.getCompound(i)).orElse(ItemStack.EMPTY)));
-                    this.guardInventory.setStack(index, stack);
-                } else {
-                    listtag.add(new NbtCompound());
+                    this.guardInventory.setStack(slot, stack);
                 }
             }
         }
 
-        if (nbt.contains("HandItems", 9)) {
-            NbtList handItems = nbt.getList("HandItems", 10);
-            for (int i = 0; i < this.handItems.size(); ++i) {
-                int handSlot = i == 0 ? 5 : 4;
-                if (!ItemStack.fromNbtOrEmpty(this.getRegistryManager(), handItems.getCompound(i)).isEmpty())
-                    this.guardInventory.setStack(handSlot, ItemStack.fromNbtOrEmpty(this.getRegistryManager(), handItems.getCompound(i)));
-                else
-                    listtag.add(new NbtCompound());
+        if (nbt.contains("ArmorItems")) {
+            NbtList armorItems = nbt.getListOrEmpty("ArmorItems");
+            for (int i = 0; i < armorItems.size(); ++i) {
+                NbtCompound entry = armorItems.getCompoundOrEmpty(i);
+
+                // 1.21.5: returns ItemStack directly
+                ItemStack stack = ItemStack.fromNbt(this.getRegistryManager(), entry).orElseThrow();
+                if (stack.isEmpty()) continue;
+
+                // Determine the equipment slot for this stack
+                EquipmentSlot slot;
+                EquippableComponent eq = stack.get(DataComponentTypes.EQUIPPABLE);
+                if (eq != null) {
+                    slot = eq.slot();
+                } else {
+                    // fallback if you still have a helper
+                    slot = getPreferredEquipmentSlot(stack);
+                }
+
+                int index = GuardEntity.slotToInventoryIndex(slot);
+                this.guardInventory.setStack(index, stack);
             }
-            if (!getWorld().isClient) this.readAngerFromNbt(getWorld(), nbt);
         }
 
+        if (nbt.contains("HandItems")) {
+            NbtList handList = nbt.getListOrEmpty("HandItems");
+
+            // Only two hands; clamp to 2 just in case
+            int count = Math.min(handList.size(), 2);
+            for (int i = 0; i < count; ++i) {
+                NbtCompound entry = handList.getCompoundOrEmpty(i);
+
+                // 1.21.5: fromNbt returns ItemStack directly (no Optional, no fromNbtOrEmpty)
+                ItemStack stack = ItemStack.fromNbt(this.getRegistryManager(), entry).orElseThrow();
+                if (stack.isEmpty()) continue;
+
+                int handSlot = (i == 0) ? 5 : 4; // keep your existing slot mapping
+                this.guardInventory.setStack(handSlot, stack);
+            }
+
+            if (!this.getWorld().isClient) {
+                this.readAngerFromNbt(this.getWorld(), nbt);
+            }
+        }
+
+    }
+
+    @Nullable
+    private static UUID readUuidFlexible(NbtCompound nbt, String key) {
+        if (!nbt.contains(key)) return null;
+
+        // 1) String form: guard with type check, then use getString (always returns String)
+        if (nbt.contains(key)) {
+            String s = nbt.getString(key).orElse("");
+            if (!s.isEmpty()) {
+                try {
+                    return UUID.fromString(s);
+                } catch (IllegalArgumentException ignored) {}
+            }
+        }
+
+        // 2) 4-int array form (common in older saves)
+        if (nbt.contains(key)) {
+            int[] arr = nbt.getIntArray(key).orElse(new int[0]);
+            if (arr.length == 4) {
+                return Uuids.toUuid(arr);
+            }
+        }
+
+        // 3) 2-long array form
+        if (nbt.contains(key)) {
+            long[] arr = nbt.getLongArray(key).orElse(new long[0]);
+            if (arr.length == 2) {
+                return new UUID(arr[0], arr[1]);
+            }
+        }
+
+        return null;
     }
 
     static final int consumeEventId = 2003;
@@ -314,25 +393,37 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
         nbt.putLong("LastGossipTime", this.lastGossipTime);
         nbt.putLong("LastGossipDecay", this.lastGossipDecayTime);
         if (this.getOwnerId() != null) {
-            nbt.putUuid("Owner", this.getOwnerId());
+            this.dataTracker.get(OWNER_UNIQUE_ID).map(LazyEntityReference::getUuid).ifPresent(uuid -> nbt.putIntArray("Owner", Uuids.toIntArray(uuid)));
         }
 
-        NbtList listnbt = new NbtList();
-        for (int i = 0; i < this.guardInventory.size(); ++i) {
-            ItemStack itemstack = this.guardInventory.getStack(i);
-            if (!itemstack.isEmpty()) {
-                NbtCompound nbtnbt = new NbtCompound();
-                nbtnbt.putByte("Slot", (byte) i);
-                listnbt.add(itemstack.toNbt(this.getRegistryManager()));
+        NbtList out = new NbtList();
+        for (int slot = 0; slot < this.guardInventory.size(); ++slot) {
+            ItemStack stack = this.guardInventory.getStack(slot);
+            if (stack.isEmpty()) continue;
+
+            NbtCompound entry = new NbtCompound();
+            entry.putByte("Slot", (byte) slot);
+
+            NbtElement raw = stack.toNbt(this.getRegistryManager());
+
+            if (raw instanceof NbtCompound stackNbt) {
+                entry.copyFrom(stackNbt);
+                out.add(entry);
+            } else {
+                // Extremely unlikely, but don't crash if it's not a compound
+                out.add(entry);
             }
         }
-        nbt.put("Inventory", listnbt);
+        nbt.put("Inventory", out);
+
         if (this.getPatrolPos() != null) {
             nbt.putInt("PatrolPosX", this.getPatrolPos().getX());
             nbt.putInt("PatrolPosY", this.getPatrolPos().getY());
             nbt.putInt("PatrolPosZ", this.getPatrolPos().getZ());
         }
-        nbt.put("Gossips", this.gossips.serialize(NbtOps.INSTANCE));
+        VillagerGossips.CODEC.encodeStart(NbtOps.INSTANCE, this.gossips)
+                .result()
+                .ifPresent(tag -> nbt.put("Gossips", tag));
         this.writeAngerToNbt(nbt);
     }
 
@@ -391,11 +482,13 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
 
     @Nullable
     public UUID getOwnerId() {
-        return this.dataTracker.get(OWNER_UNIQUE_ID).orElse(null);
+        return this.dataTracker.get(OWNER_UNIQUE_ID)
+                .map(LazyEntityReference::getUuid)
+                .orElse(null);
     }
 
     public void setOwnerId(@Nullable UUID p_184754_1_) {
-        this.dataTracker.set(OWNER_UNIQUE_ID, Optional.ofNullable(p_184754_1_));
+        this.dataTracker.set(OWNER_UNIQUE_ID, Optional.of(new LazyEntityReference<>(this)));
     }
 
     @Override
@@ -480,29 +573,9 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
 
 
     @Override
-    protected void takeShieldHit(LivingEntity entityIn) {
-        super.takeShieldHit(entityIn);
+    protected void takeShieldHit(ServerWorld serverWorld, LivingEntity entityIn) {
+        super.takeShieldHit(serverWorld, entityIn);
         if (entityIn.getMainHandStack().getItem() instanceof AxeItem) this.disableShield(true, entityIn.getMainHandStack().getItem());
-    }
-
-    @Override
-    public void damageShield(float amount) {
-        if (this.activeItemStack.getItem() == Items.SHIELD) { // Might create compatibility problems with other mods that add shields
-            if (amount >= 3.0F) {
-                int i = 1 + MathHelper.floor(amount);
-                Hand hand = this.getActiveHand();
-                this.activeItemStack.damage(i, this, EquipmentSlot.OFFHAND);
-                if (this.activeItemStack.isEmpty()) {
-                    if (hand == Hand.MAIN_HAND) {
-                        this.equipStack(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-                    } else {
-                        this.equipStack(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
-                    }
-                    this.activeItemStack = ItemStack.EMPTY;
-                    this.playSound(SoundEvents.ITEM_SHIELD_BREAK, 0.8F, 0.8F + getWorld().random.nextFloat() * 0.4F);
-                }
-            }
-        }
     }
 
     @Override
@@ -662,7 +735,8 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
             int powerLevel = itemEnchantmentsComponent.getLevel(impl.getOrThrow(Enchantments.POWER));
 
             if (powerLevel > 0) {
-                persistentProjectileEntity.setDamage(persistentProjectileEntity.getDamage() + (double) powerLevel * 0.5D + 0.5D);
+                float damageMod = powerLevel * 0.5F + 0.5F;
+                persistentProjectileEntity.applyDamageModifier(damageMod);
             }
             int punchLevel = itemEnchantmentsComponent.getLevel(impl.getOrThrow(Enchantments.PUNCH));
             if (punchLevel > 0) {
@@ -716,7 +790,6 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
         this.setPitch(oldPitch);
     }
 
-
     private float dynamicDivergenceByDistance(float horiz) {
         final float MIN = 0.35F;
         final float MAX = 3.0F;
@@ -732,25 +805,25 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
         switch (slotIn) {
             case CHEST:
                 if (this.guardInventory.getStack(1).isEmpty())
-                    this.guardInventory.setStack(1, this.armorItems.get(slotIn.getEntitySlotId()));
+                    this.guardInventory.setStack(1, stack.copy());
                 break;
             case FEET:
                 if (this.guardInventory.getStack(3).isEmpty())
-                    this.guardInventory.setStack(3, this.armorItems.get(slotIn.getEntitySlotId()));
+                    this.guardInventory.setStack(3, stack.copy());
                 break;
             case HEAD:
                 if (this.guardInventory.getStack(0).isEmpty())
-                    this.guardInventory.setStack(0, this.armorItems.get(slotIn.getEntitySlotId()));
+                    this.guardInventory.setStack(0, stack.copy());
                 break;
             case LEGS:
                 if (this.guardInventory.getStack(2).isEmpty())
-                    this.guardInventory.setStack(2, this.armorItems.get(slotIn.getEntitySlotId()));
+                    this.guardInventory.setStack(2, stack.copy());
                 break;
             case MAINHAND:
-                this.guardInventory.setStack(5, this.handItems.get(slotIn.getEntitySlotId()));
+                this.guardInventory.setStack(5, stack.copy());
                 break;
             case OFFHAND:
-                this.guardInventory.setStack(4, this.handItems.get(slotIn.getEntitySlotId()));
+                this.guardInventory.setStack(4, stack.copy());
                 break;
         }
     }
@@ -867,7 +940,7 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
             for (int i = 0; i < this.guardInventory.size(); ++i) {
                 ItemStack itemstack = this.guardInventory.getStack(i);
 
-                if (itemstack.getItem() instanceof ArmorItem) {
+                if (ItemUtils.isArmorItem(itemstack)) {
                     DamageResistantComponent resist = itemstack.get(DataComponentTypes.DAMAGE_RESISTANT);
                     if (resist != null && resist.resists(damageSource)) {
                         return;

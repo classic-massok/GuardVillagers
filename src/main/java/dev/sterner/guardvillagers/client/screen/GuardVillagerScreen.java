@@ -159,6 +159,9 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
         this.mousePosX = (float) mouseX;
         this.mousePosY = (float) mouseY;
         super.render(ctx, mouseX, mouseY, partialTicks);
+        UiRenderUtil.drawEntityFollowMouse(ctx, this.x, this.y, mouseX, mouseY, guardEntity);
+
+
         this.drawMouseoverTooltip(ctx, mouseX, mouseY);
     }
 
