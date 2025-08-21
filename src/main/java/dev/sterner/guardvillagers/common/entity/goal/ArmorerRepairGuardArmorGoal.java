@@ -3,8 +3,8 @@ package dev.sterner.guardvillagers.common.entity.goal;
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.passive.VillagerEntity;
-import net.minecraft.item.ArmorItem;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.tag.ItemTags;
 import net.minecraft.village.VillagerProfession;
 
 import java.util.List;
@@ -28,7 +28,7 @@ public class ArmorerRepairGuardArmorGoal extends Goal {
                         if (mob.getVillagerData().getProfession() == VillagerProfession.ARMORER) {
                             for (int i = 0; i < guard.guardInventory.size() - 2; ++i) {
                                 ItemStack itemstack = guard.guardInventory.getStack(i);
-                                if (itemstack.isDamaged() && itemstack.getItem() instanceof ArmorItem && itemstack.getDamage() >= itemstack.getMaxDamage() / 2) {
+                                if (isArmorItem(itemstack) && itemstack.getDamage() >= itemstack.getMaxDamage() / 2) {
                                     this.villager = mob;
                                     return true;
                                 }
@@ -61,7 +61,7 @@ public class ArmorerRepairGuardArmorGoal extends Goal {
             if (profession == VillagerProfession.ARMORER) {
                 for (int i = 0; i < guard.guardInventory.size() - 2; ++i) {
                     ItemStack itemstack = guard.guardInventory.getStack(i);
-                    if (itemstack.isDamaged() && itemstack.getItem() instanceof ArmorItem && itemstack.getDamage() >= itemstack.getMaxDamage() / 2 + guard.getRandom().nextInt(5)) {
+                    if (isArmorItem(itemstack) && itemstack.getDamage() >= itemstack.getMaxDamage() / 2 + guard.getRandom().nextInt(5)) {
                         itemstack.setDamage(itemstack.getDamage() - guard.getRandom().nextInt(5));
                     }
                 }
@@ -75,5 +75,13 @@ public class ArmorerRepairGuardArmorGoal extends Goal {
                 }
             }
         }
+    }
+
+    private boolean isArmorItem(ItemStack itemstack) {
+        if ((itemstack.isIn(ItemTags.HEAD_ARMOR) || itemstack.isIn(ItemTags.CHEST_ARMOR) || itemstack.isIn(ItemTags.LEG_ARMOR) || itemstack.isIn(ItemTags.FOOT_ARMOR)) {
+            return true;
+        }
+
+        return false;
     }
 }
