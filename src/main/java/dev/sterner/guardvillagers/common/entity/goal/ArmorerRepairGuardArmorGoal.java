@@ -8,7 +8,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.village.VillagerProfession;
 
 import java.util.List;
-
+// TODO: Fix errors
 public class ArmorerRepairGuardArmorGoal extends Goal {
     private final GuardEntity guard;
     private VillagerEntity villager;

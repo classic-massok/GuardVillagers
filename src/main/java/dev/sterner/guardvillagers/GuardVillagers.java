@@ -43,7 +43,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.function.Predicate;
-
+// TODO: Fix errors
 public class GuardVillagers implements ModInitializer {
     public static final String MODID = "guardvillagers";
 
@@ -198,7 +198,7 @@ public class GuardVillagers implements ModInitializer {
                 double d0 = villagerEntity.getRandom().nextGaussian() * 0.02D;
                 double d1 = villagerEntity.getRandom().nextGaussian() * 0.02D;
                 double d2 = villagerEntity.getRandom().nextGaussian() * 0.02D;
-                villagerEntity.getWorld().addParticle(particleEffect, villagerEntity.getX() + (double) (villagerEntity.getRandom().nextFloat() * villagerEntity.getWidth() * 2.0F) - (double) villagerEntity.getWidth(), villagerEntity.getY() + 0.5D + (double) (villagerEntity.getRandom().nextFloat() * villagerEntity.getWidth()),
+                villagerEntity.getWorld().addParticleClient(particleEffect, villagerEntity.getX() + (double) (villagerEntity.getRandom().nextFloat() * villagerEntity.getWidth() * 2.0F) - (double) villagerEntity.getWidth(), villagerEntity.getY() + 0.5D + (double) (villagerEntity.getRandom().nextFloat() * villagerEntity.getWidth()),
                         villagerEntity.getZ() + (double) (villagerEntity.getRandom().nextFloat() * villagerEntity.getWidth() * 2.0F) - (double) villagerEntity.getWidth(), d0, d1, d2);
             }
         }

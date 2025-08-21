@@ -8,7 +8,7 @@ import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.village.VillagerProfession;
 
 import java.util.List;
-
+// TODO: Fix errors
 public class RunToClericGoal extends Goal {
     public final GuardEntity guard;
     public VillagerEntity cleric;
