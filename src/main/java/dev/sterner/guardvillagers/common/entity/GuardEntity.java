@@ -194,7 +194,7 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
     @Override
     protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
         if (this.isBlocking()) {
-            return SoundEvents.ITEM_SHIELD_BLOCK;
+            return SoundEvents.ITEM_SHIELD_BLOCK.value();
         } else {
             return GuardVillagers.GUARD_HURT;
         }
