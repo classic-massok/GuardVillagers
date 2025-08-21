@@ -23,7 +23,7 @@ import net.minecraft.village.VillagerProfession;
 
 import java.util.EnumSet;
 import java.util.List;
-// TODO: Fix errors
+
 public class HealGuardAndPlayerGoal extends Goal {
     private final MobEntity healer;
     private LivingEntity mob;
