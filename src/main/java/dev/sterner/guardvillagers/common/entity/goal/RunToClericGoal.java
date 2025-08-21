@@ -8,7 +8,7 @@ import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.village.VillagerProfession;
 
 import java.util.List;
-// TODO: Fix errors
+
 public class RunToClericGoal extends Goal {
     public final GuardEntity guard;
     public VillagerEntity cleric;
@@ -23,7 +23,7 @@ public class RunToClericGoal extends Goal {
         if (!list.isEmpty()) {
             for (VillagerEntity mob : list) {
                 if (mob != null) {
-                    if (mob.getVillagerData().getProfession() == VillagerProfession.CLERIC && guard.getHealth() < guard.getMaxHealth() && guard.getTarget() == null && !guard.hasStatusEffect(StatusEffects.REGENERATION)) {
+                    if (mob.getVillagerData().profession().matchesKey(VillagerProfession.CLERIC) && guard.getHealth() < guard.getMaxHealth() && guard.getTarget() == null && !guard.hasStatusEffect(StatusEffects.REGENERATION)) {
                         this.cleric = mob;
                         return GuardVillagersConfig.clericHealing;
                     }
