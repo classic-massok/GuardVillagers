@@ -226,20 +226,20 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
                 this.setOwnerId(null);
             }
         }
-        this.setGuardEntityVariant(nbt.getInt("Type"));
-        this.kickTicks = nbt.getInt("KickTicks");
-        this.setFollowing(nbt.getBoolean("Following"));
-        this.interacting = nbt.getBoolean("Interacting");
-        this.setPatrolling(nbt.getBoolean("Patrolling"));
-        this.shieldCoolDown = nbt.getInt("KickCooldown");
-        this.kickCoolDown = nbt.getInt("ShieldCooldown");
-        this.lastGossipDecayTime = nbt.getLong("LastGossipDecay");
-        this.lastGossipTime = nbt.getLong("LastGossipTime");
-        this.spawnWithArmor = nbt.getBoolean("SpawnWithArmor");
+        this.setGuardEntityVariant(nbt.getInt("Type").orElseThrow());
+        this.kickTicks = nbt.getInt("KickTicks").orElseThrow();
+        this.setFollowing(nbt.getBoolean("Following").orElseThrow());
+        this.interacting = nbt.getBoolean("Interacting").orElseThrow();
+        this.setPatrolling(nbt.getBoolean("Patrolling").orElseThrow());
+        this.shieldCoolDown = nbt.getInt("KickCooldown").orElseThrow();
+        this.kickCoolDown = nbt.getInt("ShieldCooldown").orElseThrow();
+        this.lastGossipDecayTime = nbt.getLong("LastGossipDecay").orElseThrow();
+        this.lastGossipTime = nbt.getLong("LastGossipTime").orElseThrow();
+        this.spawnWithArmor = nbt.getBoolean("SpawnWithArmor").orElseThrow();
         if (nbt.contains("PatrolPosX")) {
-            int x = nbt.getInt("PatrolPosX");
-            int y = nbt.getInt("PatrolPosY");
-            int z = nbt.getInt("PatrolPosZ");
+            int x = nbt.getInt("PatrolPosX").orElseThrow();
+            int y = nbt.getInt("PatrolPosY").orElseThrow();
+            int z = nbt.getInt("PatrolPosZ").orElseThrow();
             this.dataTracker.set(GUARD_POS, Optional.ofNullable(new BlockPos(x, y, z)));
         }
         NbtList listtag = nbt.getList("Gossips", 10);
