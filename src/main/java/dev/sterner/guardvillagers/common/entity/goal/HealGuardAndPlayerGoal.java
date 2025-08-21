@@ -48,7 +48,7 @@ public class HealGuardAndPlayerGoal extends Goal {
 
     @Override
     public boolean canStart() {
-        if (((VillagerEntity) this.healer).getVillagerData().getProfession() != VillagerProfession.CLERIC || this.healer.isSleeping()) {
+        if (((VillagerEntity) this.healer).getVillagerData().profession().matchesKey(VillagerProfession.CLERIC) || this.healer.isSleeping()) {
             return false;
         }
         List<LivingEntity> list = this.healer.getWorld().getNonSpectatingEntities(LivingEntity.class, this.healer.getBoundingBox().expand(10.0D, 3.0D, 10.0D));
