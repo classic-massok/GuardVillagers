@@ -135,7 +135,7 @@ public class HealGuardAndPlayerGoal extends Goal {
         potionentity.setItem(PotionContentsComponent.createStack(Items.SPLASH_POTION, potion));
         potionentity.setPitch(-20.0F);
         potionentity.setVelocity(d0, d1 + (double) (f * 0.2F), d2, 0.75F, 8.0F);
-        healer.getWorld().playSoundClient(null, healer.getX(), healer.getY(), healer.getZ(), SoundEvents.ENTITY_SPLASH_POTION_THROW, healer.getSoundCategory(), 1.0F, 0.8F + healer.getRandom().nextFloat() * 0.4F);
+        healer.getWorld().playSoundClient(healer.getX(), healer.getY(), healer.getZ(), SoundEvents.ENTITY_SPLASH_POTION_THROW, healer.getSoundCategory(), 1.0F, 0.8F + healer.getRandom().nextFloat() * 0.4F, true);
         healer.getWorld().spawnEntity(potionentity);
     }
 }
