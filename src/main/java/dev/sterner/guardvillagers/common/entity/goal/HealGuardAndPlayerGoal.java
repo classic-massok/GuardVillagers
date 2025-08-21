@@ -127,7 +127,7 @@ public class HealGuardAndPlayerGoal extends Goal {
         } else {
             potion = Potions.REGENERATION;
         }
-        PotionEntity potionentity = EntityType.POTION.create(healer.getWorld(), SpawnReason.TRIGGERED);
+        PotionEntity potionentity = EntityType.SPLASH_POTION.create(healer.getWorld(), SpawnReason.TRIGGERED);
         if (potionentity == null) {
             return;
         }
