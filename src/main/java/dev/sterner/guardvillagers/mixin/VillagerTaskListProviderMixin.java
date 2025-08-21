@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.ArrayList;
 import java.util.List;
-// TODO: Fix errors
+
 @Mixin(VillagerTaskListProvider.class)
 public class VillagerTaskListProviderMixin {
     @Inject(method = "createMeetTasks", cancellable = true, at = @At("RETURN"))
@@ -42,7 +42,7 @@ public class VillagerTaskListProviderMixin {
 
     @Inject(method = "createWorkTasks", cancellable = true, at = @At("RETURN"))
     private static void guardvillagers$createWorkTasks(RegistryEntry<VillagerProfession> profession, float speed, CallbackInfoReturnable<ImmutableList<Pair<Integer, ? extends Task<? super VillagerEntity>>>> cir) {
-        if (profession == VillagerProfession.TOOLSMITH || profession == VillagerProfession.WEAPONSMITH && GuardVillagersConfig.blackSmithHealing) {
+        if (profession.matchesKey(VillagerProfession.TOOLSMITH) || profession.matchesKey(VillagerProfession.WEAPONSMITH) && GuardVillagersConfig.blackSmithHealing) {
             List<Pair<Integer, ? extends Task<? super VillagerEntity>>> villagerList = new ArrayList<>(cir.getReturnValue());
             villagerList.add(Pair.of(2, new CompositeTask<>(ImmutableMap.of(), ImmutableSet.of(MemoryModuleType.INTERACTION_TARGET), CompositeTask.Order.ORDERED, CompositeTask.RunMode.RUN_ONE, ImmutableList.of(Pair.of(new RepairGolemTask(), 1), Pair.of(new GatherItemsVillagerTask(), 1)))));
             cir.setReturnValue(ImmutableList.copyOf(villagerList));
