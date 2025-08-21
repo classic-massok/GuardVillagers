@@ -4,11 +4,11 @@ import dev.sterner.guardvillagers.common.entity.GuardEntity;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.ItemTags;
 import net.minecraft.village.VillagerProfession;
 
 import java.util.List;
-// TODO: Fix errors
 public class ArmorerRepairGuardArmorGoal extends Goal {
     private final GuardEntity guard;
     private VillagerEntity villager;
@@ -23,9 +23,9 @@ public class ArmorerRepairGuardArmorGoal extends Goal {
         if (!list.isEmpty()) {
             for (VillagerEntity mob : list) {
                 if (mob != null) {
-                    boolean isArmorerOrWeaponSmith = mob.getVillagerData().getProfession() == VillagerProfession.ARMORER || mob.getVillagerData().getProfession() == VillagerProfession.WEAPONSMITH;
+                    boolean isArmorerOrWeaponSmith = mob.getVillagerData().profession().matchesKey(VillagerProfession.ARMORER) || mob.getVillagerData().profession().matchesKey(VillagerProfession.WEAPONSMITH);
                     if (isArmorerOrWeaponSmith && guard.getTarget() == null) {
-                        if (mob.getVillagerData().getProfession() == VillagerProfession.ARMORER) {
+                        if (mob.getVillagerData().profession().matchesKey(VillagerProfession.ARMORER)) {
                             for (int i = 0; i < guard.guardInventory.size() - 2; ++i) {
                                 ItemStack itemstack = guard.guardInventory.getStack(i);
                                 if (isArmorItem(itemstack) && itemstack.getDamage() >= itemstack.getMaxDamage() / 2) {
@@ -34,7 +34,7 @@ public class ArmorerRepairGuardArmorGoal extends Goal {
                                 }
                             }
                         }
-                        if (mob.getVillagerData().getProfession() == VillagerProfession.WEAPONSMITH) {
+                        if (mob.getVillagerData().profession().matchesKey(VillagerProfession.WEAPONSMITH)) {
                             for (int i = 4; i < 6; ++i) {
                                 ItemStack itemstack = guard.guardInventory.getStack(i);
                                 if (itemstack.isDamaged() && itemstack.getDamage() >= itemstack.getMaxDamage() / 2) {
@@ -57,8 +57,8 @@ public class ArmorerRepairGuardArmorGoal extends Goal {
             guard.getNavigation().startMovingTo(villager, 0.5D);
             villager.getNavigation().startMovingTo(guard, 0.5D);
         } else {
-            VillagerProfession profession = villager.getVillagerData().getProfession();
-            if (profession == VillagerProfession.ARMORER) {
+            RegistryEntry<VillagerProfession> profession = villager.getVillagerData().profession();
+            if (profession.matchesKey(VillagerProfession.ARMORER)) {
                 for (int i = 0; i < guard.guardInventory.size() - 2; ++i) {
                     ItemStack itemstack = guard.guardInventory.getStack(i);
                     if (isArmorItem(itemstack) && itemstack.getDamage() >= itemstack.getMaxDamage() / 2 + guard.getRandom().nextInt(5)) {
@@ -66,7 +66,7 @@ public class ArmorerRepairGuardArmorGoal extends Goal {
                     }
                 }
             }
-            if (profession == VillagerProfession.WEAPONSMITH) {
+            if (profession.matchesKey(VillagerProfession.WEAPONSMITH)) {
                 for (int i = 4; i < 6; ++i) {
                     ItemStack itemstack = guard.guardInventory.getStack(i);
                     if (itemstack.isDamaged() && itemstack.getDamage() >= itemstack.getMaxDamage() / 2 + guard.getRandom().nextInt(5)) {
@@ -78,10 +78,6 @@ public class ArmorerRepairGuardArmorGoal extends Goal {
     }
 
     private boolean isArmorItem(ItemStack itemstack) {
-        if ((itemstack.isIn(ItemTags.HEAD_ARMOR) || itemstack.isIn(ItemTags.CHEST_ARMOR) || itemstack.isIn(ItemTags.LEG_ARMOR) || itemstack.isIn(ItemTags.FOOT_ARMOR)) {
-            return true;
-        }
-
-        return false;
+        return itemstack.isIn(ItemTags.HEAD_ARMOR) || itemstack.isIn(ItemTags.CHEST_ARMOR) || itemstack.isIn(ItemTags.LEG_ARMOR) || itemstack.isIn(ItemTags.FOOT_ARMOR);
     }
 }
