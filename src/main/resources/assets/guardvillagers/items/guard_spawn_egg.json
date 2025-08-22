@@ -1,10 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "minecraft:item/template_spawn_egg",
-    "tints": [
-      { "type": "minecraft:constant", "value": 5651507 },
-      { "type": "minecraft:constant", "value": 8412749 }
-    ]
+    "model": "guardvillagers:item/guard_spawn_egg"
   }
 }

@@ -1,6 +1,5 @@
 package dev.sterner.guardvillagers.client.screen;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import dev.sterner.guardvillagers.GuardVillagers;
 import dev.sterner.guardvillagers.GuardVillagersConfig;
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
@@ -10,19 +9,15 @@ import dev.sterner.guardvillagers.common.screenhandler.GuardVillagerScreenHandle
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.client.gui.screen.ButtonTextures;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TexturedButtonWidget;
-import net.minecraft.client.render.GameRenderer;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
@@ -115,9 +110,7 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
     private static final Identifier ARMOR_FULL_TEXTURE = Identifier.ofVanilla("hud/armor_full");
 
     private void drawHeart(DrawContext context, HeartType type, int x, int y, boolean half) {
-        RenderSystem.enableBlend();
         context.drawGuiTexture(net.minecraft.client.render.RenderLayer::getGuiTextured, type.getTexture(half), x, y, 9, 9);
-        RenderSystem.disableBlend();
     }
 
     @Override
@@ -166,6 +159,9 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
         this.mousePosX = (float) mouseX;
         this.mousePosY = (float) mouseY;
         super.render(ctx, mouseX, mouseY, partialTicks);
+        UiRenderUtil.drawEntityFollowMouse(ctx, this.x, this.y, mouseX, mouseY, guardEntity);
+
+
         this.drawMouseoverTooltip(ctx, mouseX, mouseY);
     }
 

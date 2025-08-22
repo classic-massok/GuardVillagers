@@ -29,6 +29,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.tag.ItemTags;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
@@ -164,12 +165,12 @@ public class GuardVillagers implements ModInitializer {
 
     private ActionResult villagerConvert(PlayerEntity player, World world, Hand hand, Entity entity, @Nullable EntityHitResult entityHitResult) {
         ItemStack itemStack = player.getStackInHand(hand);
-        if ((itemStack.getItem() instanceof SwordItem || itemStack.getItem() instanceof CrossbowItem) && player.isSneaking()) {
+        if ((itemStack.isIn(ItemTags.SWORDS) || itemStack.getItem() instanceof CrossbowItem) && player.isSneaking()) {
             if (entityHitResult != null) {
                 Entity target = entityHitResult.getEntity();
                 if (target instanceof VillagerEntity villagerEntity) {
                     if (!villagerEntity.isBaby()) {
-                        if (villagerEntity.getVillagerData().getProfession() == VillagerProfession.NONE || villagerEntity.getVillagerData().getProfession() == VillagerProfession.NITWIT) {
+                        if (villagerEntity.getVillagerData().profession().matchesKey(VillagerProfession.NONE) || villagerEntity.getVillagerData().profession().matchesKey(VillagerProfession.NITWIT)) {
                             if (!GuardVillagersConfig.convertVillagerIfHaveHotv || player.hasStatusEffect(StatusEffects.HERO_OF_THE_VILLAGE) && GuardVillagersConfig.convertVillagerIfHaveHotv) {
                                 convertVillager(villagerEntity, player, world);
                                 if (!player.getAbilities().creativeMode)
@@ -198,7 +199,7 @@ public class GuardVillagers implements ModInitializer {
                 double d0 = villagerEntity.getRandom().nextGaussian() * 0.02D;
                 double d1 = villagerEntity.getRandom().nextGaussian() * 0.02D;
                 double d2 = villagerEntity.getRandom().nextGaussian() * 0.02D;
-                villagerEntity.getWorld().addParticle(particleEffect, villagerEntity.getX() + (double) (villagerEntity.getRandom().nextFloat() * villagerEntity.getWidth() * 2.0F) - (double) villagerEntity.getWidth(), villagerEntity.getY() + 0.5D + (double) (villagerEntity.getRandom().nextFloat() * villagerEntity.getWidth()),
+                villagerEntity.getWorld().addParticleClient(particleEffect, villagerEntity.getX() + (double) (villagerEntity.getRandom().nextFloat() * villagerEntity.getWidth() * 2.0F) - (double) villagerEntity.getWidth(), villagerEntity.getY() + 0.5D + (double) (villagerEntity.getRandom().nextFloat() * villagerEntity.getWidth()),
                         villagerEntity.getZ() + (double) (villagerEntity.getRandom().nextFloat() * villagerEntity.getWidth() * 2.0F) - (double) villagerEntity.getWidth(), d0, d1, d2);
             }
         }

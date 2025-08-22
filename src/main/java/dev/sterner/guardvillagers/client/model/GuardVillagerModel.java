@@ -1,15 +1,9 @@
 package dev.sterner.guardvillagers.client.model;
 
 import dev.sterner.guardvillagers.client.render.state.GuardBipedRenderState;
-import dev.sterner.guardvillagers.client.render.state.GuardPlayerRenderState;
-import dev.sterner.guardvillagers.common.entity.GuardEntity;
 import net.minecraft.client.model.*;
 import net.minecraft.client.render.entity.model.BipedEntityModel;
-import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.item.ArmorItem;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.RangedWeaponItem;
 import net.minecraft.util.Arm;
 import net.minecraft.util.Hand;
 import net.minecraft.item.consume.UseAction;
@@ -32,31 +26,31 @@ public class GuardVillagerModel extends BipedEntityModel<GuardBipedRenderState> 
         ModelData meshdefinition = BipedEntityModel.getModelData(Dilation.NONE, 0.0F);
         ModelPartData partdefinition = meshdefinition.getRoot();
         ModelPartData torso = partdefinition.addChild("body", ModelPartBuilder.create().uv(52, 50)
-                .cuboid(-4.0F, 0.0F, -2.0F, 8, 12, 4, new Dilation(0.25F)), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+                .cuboid(-4.0F, 0.0F, -2.0F, 8, 12, 4, new Dilation(0.25F)), ModelTransform.origin(0.0F, 0.0F, 0.0F));
         ModelPartData head = partdefinition.addChild("head", ModelPartBuilder.create().uv(49, 99)
-                .cuboid(-4.0F, -10.0F, -4.0F, 8, 10, 8, new Dilation(0.0F)), ModelTransform.pivot(0.0F, 1.0F, 0.0F));
+                .cuboid(-4.0F, -10.0F, -4.0F, 8, 10, 8, new Dilation(0.0F)), ModelTransform.origin(0.0F, 1.0F, 0.0F));
         ModelPartData rightArm = partdefinition.addChild("right_arm", ModelPartBuilder.create().uv(32, 75)
                         .mirrored().cuboid(-3.0F, -2.0F, -2.0F, 4, 12, 4, new Dilation(0.0F)),
-                ModelTransform.pivot(-5.0F, 2.0F, 0.0F));
+                ModelTransform.origin(-5.0F, 2.0F, 0.0F));
         ModelPartData leftArm = partdefinition.addChild("left_arm", ModelPartBuilder.create().uv(33, 48)
-                .cuboid(-1.0F, -2.0F, -2.0F, 4, 12, 4, new Dilation(0.0F)), ModelTransform.pivot(5.0F, 2.0F, 0.0F));
+                .cuboid(-1.0F, -2.0F, -2.0F, 4, 12, 4, new Dilation(0.0F)), ModelTransform.origin(5.0F, 2.0F, 0.0F));
         torso.addChild("quiver", ModelPartBuilder.create().uv(100, 0).cuboid(-2.5F, -2.0F, 0.0F, 5, 10, 5,
-                new Dilation(0.0F)), ModelTransform.pivot(0.5F, 3.0F, 2.3F));
+                new Dilation(0.0F)), ModelTransform.origin(0.5F, 3.0F, 2.3F));
         head.addChild("nose",
                 ModelPartBuilder.create().uv(54, 0).cuboid(-1.0F, 0.0F, -2.0F, 2, 4, 2, new Dilation(0.0F)),
-                ModelTransform.pivot(0.0F, -3.0F, -4.0F));
+                ModelTransform.origin(0.0F, -3.0F, -4.0F));
         partdefinition.addChild("right_leg", ModelPartBuilder.create().uv(16, 48).mirrored().cuboid(-2.0F,
-                0.0F, -2.0F, 4, 12, 4, new Dilation(0.0F)), ModelTransform.pivot(-1.9F, 12.0F, 0.0F));
+                0.0F, -2.0F, 4, 12, 4, new Dilation(0.0F)), ModelTransform.origin(-1.9F, 12.0F, 0.0F));
         partdefinition.addChild("left_leg", ModelPartBuilder.create().uv(16, 28).cuboid(-2.0F, 0.0F, -2.0F,
-                4, 12, 4, new Dilation(0.0F)), ModelTransform.pivot(1.9F, 12.0F, 0.0F));
+                4, 12, 4, new Dilation(0.0F)), ModelTransform.origin(1.9F, 12.0F, 0.0F));
         leftArm.addChild("shoulderPad_right",
                 ModelPartBuilder.create().uv(72, 33).mirrored().cuboid(0.0F, 0.0F, -3.0F, 5, 3, 6, new Dilation(0.0F)),
-                ModelTransform.pivot(-0.5F, -3.5F, 0.0F));
+                ModelTransform.origin(-0.5F, -3.5F, 0.0F));
         rightArm.addChild("shoulderPad_left",
                 ModelPartBuilder.create().uv(72, 33).cuboid(-5.0F, 0.0F, -3.0F, 5, 3, 6, new Dilation(0.0F)),
-                ModelTransform.pivot(0.5F, -3.5F, 0.0F));
+                ModelTransform.origin(0.5F, -3.5F, 0.0F));
         head.addChild("hat", ModelPartBuilder.create().uv(0, 0).cuboid(-4.5F, -11.0F, -4.5F, 9,
-                11, 9, new Dilation(0.0F)), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
+                11, 9, new Dilation(0.0F)), ModelTransform.origin(0.0F, 0.0F, 0.0F));
         return TexturedModelData.of(meshdefinition, 128, 128);
     }
 
