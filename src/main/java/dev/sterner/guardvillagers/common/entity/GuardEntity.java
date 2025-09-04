@@ -44,6 +44,7 @@ import net.minecraft.entity.raid.RaiderEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.InventoryChangedListener;
 import net.minecraft.inventory.SimpleInventory;
+import net.minecraft.inventory.StackWithSlot;
 import net.minecraft.item.*;
 import net.minecraft.item.consume.UseAction;
 import net.minecraft.loot.LootTable;
@@ -61,6 +62,8 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.storage.ReadView;
+import net.minecraft.storage.WriteView;
 import net.minecraft.text.Text;
 import net.minecraft.util.*;
 import net.minecraft.util.math.BlockPos;
@@ -74,8 +77,6 @@ import net.minecraft.village.VillagerType;
 import net.minecraft.world.*;
 import org.jetbrains.annotations.Nullable;
 import net.minecraft.nbt.NbtElement;
-import net.minecraft.util.Uuids;
-
 import java.util.*;
 import java.util.function.Predicate;
 // TODO: Fix errors
@@ -121,7 +122,7 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
         this.guardInventory.addListener(this);
         this.setPersistent();
         if (GuardVillagersConfig.guardEntitysOpenDoors)
-            ((MobNavigation) this.getNavigation()).setCanPathThroughDoors(true);
+            this.getNavigation().setCanOpenDoors(true);
     }
 
     public static int slotToInventoryIndex(EquipmentSlot slot) {
@@ -219,109 +220,112 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
     }
 
     @Override
-    public void readCustomDataFromNbt(NbtCompound nbt) {
-        super.readCustomDataFromNbt(nbt);
+    public void readCustomData(ReadView rv) {
+        super.readCustomData(rv);
 
-        UUID owner = readUuidFlexible(nbt, "Owner");
-        this.setOwnerId(owner); // accepts null
+        rv.read("Owner", Uuids.STRICT_CODEC).ifPresent(this::setOwnerId);
 
-        this.setGuardEntityVariant(nbt.getInt("Type").orElseThrow());
-        this.kickTicks = nbt.getInt("KickTicks").orElseThrow();
-        this.setFollowing(nbt.getBoolean("Following").orElseThrow());
-        this.interacting = nbt.getBoolean("Interacting").orElseThrow();
-        this.setPatrolling(nbt.getBoolean("Patrolling").orElseThrow());
-        this.shieldCoolDown = nbt.getInt("KickCooldown").orElseThrow();
-        this.kickCoolDown = nbt.getInt("ShieldCooldown").orElseThrow();
-        this.lastGossipDecayTime = nbt.getLong("LastGossipDecay").orElseThrow();
-        this.lastGossipTime = nbt.getLong("LastGossipTime").orElseThrow();
-        this.spawnWithArmor = nbt.getBoolean("SpawnWithArmor").orElseThrow();
-        if (nbt.contains("PatrolPosX")) {
-            int x = nbt.getInt("PatrolPosX").orElseThrow();
-            int y = nbt.getInt("PatrolPosY").orElseThrow();
-            int z = nbt.getInt("PatrolPosZ").orElseThrow();
+        this.setGuardEntityVariant(rv.getInt("Type", 0));
+        this.kickTicks = rv.getInt("KickTicks", 0);
+        this.setFollowing(rv.getBoolean("Following", false));
+        this.interacting = rv.getBoolean("Interacting", false);
+        this.setPatrolling(rv.getBoolean("Patrolling", false));
+        this.shieldCoolDown = rv.getInt("KickCooldown", 0);
+        this.kickCoolDown = rv.getInt("ShieldCooldown", 0);
+        this.lastGossipDecayTime = rv.getLong("LastGossipDecay", 0);
+        this.lastGossipTime = rv.getLong("LastGossipTime", 0);
+        this.spawnWithArmor = rv.getBoolean("SpawnWithArmor", false);
+        if (rv.getOptionalInt("PatrolPosX").isPresent()) {
+            int x = rv.getInt("PatrolPosX", 0);
+            int y = rv.getInt("PatrolPosY", 0);
+            int z = rv.getInt("PatrolPosZ",0);
             this.dataTracker.set(GUARD_POS, Optional.of(new BlockPos(x, y, z)));
         }
 
-        NbtElement gossipsTag = nbt.get("Gossips");
-        if (gossipsTag != null) {
-            VillagerGossips decoded = VillagerGossips.CODEC
-                    .parse(NbtOps.INSTANCE, gossipsTag)
-                    .result()
-                    .orElseGet(VillagerGossips::new);
-
-            // replace contents of your existing container
+        rv.read("Gossips", VillagerGossips.CODEC).ifPresent(decoded -> {
             this.gossips.clear();
-            this.gossips.add(decoded);
-        }
+            this.gossips.add(decoded);  // or: this.gossips = decoded; if your field is a VillagerGossips
+        });
 
-        NbtList inventoryList = nbt.getListOrEmpty("Inventory");
-        for (int i = 0; i < inventoryList.size(); ++i) {
-            NbtCompound entry = inventoryList.getCompoundOrEmpty(i);
-            if (entry == null) continue; // belt-and-suspenders
-
-            // Your mappings return Optional<Byte> here — don’t orElseThrow()
-            var slotOpt = entry.getByte("Slot");
-            if (slotOpt.isEmpty()) continue;
-
-            int slot = Byte.toUnsignedInt(slotOpt.get());
-            if (slot >= this.guardInventory.size()) continue;
-
-            // In your env, fromNbt(...) returns Optional<ItemStack>
-            var stackOpt = ItemStack.fromNbt(this.getRegistryManager(), entry);
-            if (stackOpt != null && stackOpt.isPresent()) {
-                ItemStack stack = stackOpt.get();
+        rv.getOptionalTypedListView("Inventory", StackWithSlot.CODEC).ifPresentOrElse(list -> {
+            // Preferred: entries are { slot, stack }
+            for (var sws : list) {
+                if (!sws.isValidSlot(this.guardInventory.size())) continue;
+                ItemStack stack = sws.stack();
                 if (!stack.isEmpty()) {
-                    this.guardInventory.setStack(slot, stack);
+                    this.guardInventory.setStack(sws.slot(), stack);
                 }
             }
-        }
+        }, () -> {
+            // Fallback: plain list of ItemStacks (by index)
+            rv.getOptionalTypedListView("Inventory", ItemStack.CODEC).ifPresent(list -> {
+                int i = 0;
+                for (ItemStack stack : list) {
+                    if (i >= this.guardInventory.size()) break;
+                    if (!stack.isEmpty()) {
+                        this.guardInventory.setStack(i, stack);
+                    }
+                    i++;
+                }
+            });
+        });
 
-        if (nbt.contains("ArmorItems")) {
-            NbtList armorItems = nbt.getListOrEmpty("ArmorItems");
-            for (int i = 0; i < armorItems.size(); ++i) {
-                NbtCompound entry = armorItems.getCompoundOrEmpty(i);
+        rv.getOptionalTypedListView("ArmorItems", ItemStack.CODEC).ifPresent(list -> {
+            int i = 0; // vanilla order: 0=FEET, 1=LEGS, 2=CHEST, 3=HEAD
+            for (ItemStack stack : list) {
+                if (stack == null || stack.isEmpty()) { i++; continue; }
 
-                // 1.21.5: returns ItemStack directly
-                ItemStack stack = ItemStack.fromNbt(this.getRegistryManager(), entry).orElseThrow();
-                if (stack.isEmpty()) continue;
-
-                // Determine the equipment slot for this stack
-                EquipmentSlot slot;
+                // Prefer the EQUIPPABLE component, else your helper, else list-order fallback.
+                EquipmentSlot slot = null;
                 EquippableComponent eq = stack.get(DataComponentTypes.EQUIPPABLE);
                 if (eq != null) {
                     slot = eq.slot();
                 } else {
-                    // fallback if you still have a helper
-                    slot = getPreferredEquipmentSlot(stack);
+                    // If you keep a heuristic:
+                    slot = getPreferredEquipmentSlot(stack); // or MobEntity.getPreferredEquipmentSlot(stack)
+                    if (slot == null) {
+                        slot = armorListIndexToSlot(i); // FEET→LEGS→CHEST→HEAD
+                    }
                 }
 
-                int index = GuardEntity.slotToInventoryIndex(slot);
-                this.guardInventory.setStack(index, stack);
+                if (slot != null) {
+                    int idx = GuardEntity.slotToInventoryIndex(slot);
+                    if (idx >= 0 && idx < this.guardInventory.size()) {
+                        this.guardInventory.setStack(idx, stack);
+                    }
+                }
+                i++;
             }
-        }
+        });
 
-        if (nbt.contains("HandItems")) {
-            NbtList handList = nbt.getListOrEmpty("HandItems");
-
-            // Only two hands; clamp to 2 just in case
-            int count = Math.min(handList.size(), 2);
-            for (int i = 0; i < count; ++i) {
-                NbtCompound entry = handList.getCompoundOrEmpty(i);
-
-                // 1.21.5: fromNbt returns ItemStack directly (no Optional, no fromNbtOrEmpty)
-                ItemStack stack = ItemStack.fromNbt(this.getRegistryManager(), entry).orElseThrow();
-                if (stack.isEmpty()) continue;
-
-                int handSlot = (i == 0) ? 5 : 4; // keep your existing slot mapping
-                this.guardInventory.setStack(handSlot, stack);
+        rv.getOptionalTypedListView("HandItems", ItemStack.CODEC).ifPresent(list -> {
+            int i = 0;
+            for (ItemStack stack : list) {
+                if (i >= 2) break;
+                if (stack != null && !stack.isEmpty()) {
+                    int handSlot = GuardEntity.slotToInventoryIndex(
+                            i == 0 ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND
+                    );
+                    if (handSlot < this.guardInventory.size()) {
+                        this.guardInventory.setStack(handSlot, stack);
+                    }
+                }
+                i++;
             }
-
-            if (!this.getWorld().isClient) {
-                this.readAngerFromNbt(this.getWorld(), nbt);
-            }
-        }
-
+            if (!this.getWorld().isClient) this.readAngerFromData(this.getWorld(), rv);
+        });
     }
+
+    private static EquipmentSlot armorListIndexToSlot(int i) {
+        return switch (i) {
+            case 0 -> EquipmentSlot.FEET;
+            case 1 -> EquipmentSlot.LEGS;
+            case 2 -> EquipmentSlot.CHEST;
+            case 3 -> EquipmentSlot.HEAD;
+            default -> null;
+        };
+    }
+
 
     @Nullable
     private static UUID readUuidFlexible(NbtCompound nbt, String key) {
@@ -380,51 +384,52 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
     }
 
     @Override
-    public void writeCustomDataToNbt(NbtCompound nbt) {
-        super.writeCustomDataToNbt(nbt);
-        nbt.putInt("Type", this.getGuardEntityVariant());
-        nbt.putInt("KickTicks", this.kickTicks);
-        nbt.putInt("ShieldCooldown", this.shieldCoolDown);
-        nbt.putInt("KickCooldown", this.kickCoolDown);
-        nbt.putBoolean("Following", this.isFollowing());
-        nbt.putBoolean("Interacting", this.interacting);
-        nbt.putBoolean("Patrolling", this.isPatrolling());
-        nbt.putBoolean("SpawnWithArmor", this.spawnWithArmor);
-        nbt.putLong("LastGossipTime", this.lastGossipTime);
-        nbt.putLong("LastGossipDecay", this.lastGossipDecayTime);
-        if (this.getOwnerId() != null) {
-            this.dataTracker.get(OWNER_UNIQUE_ID).map(LazyEntityReference::getUuid).ifPresent(uuid -> nbt.putIntArray("Owner", Uuids.toIntArray(uuid)));
-        }
+    protected void writeCustomData(WriteView wv) {
+        super.writeCustomData(wv);
 
-        NbtList out = new NbtList();
-        for (int slot = 0; slot < this.guardInventory.size(); ++slot) {
+        // Primitives
+        wv.putInt("Type", this.getGuardEntityVariant());
+        wv.putInt("KickTicks", this.kickTicks);
+        wv.putInt("ShieldCooldown", this.shieldCoolDown);
+        wv.putInt("KickCooldown", this.kickCoolDown);
+        wv.putBoolean("Following", this.isFollowing());
+        wv.putBoolean("Interacting", this.interacting);
+        wv.putBoolean("Patrolling", this.isPatrolling());
+        wv.putBoolean("SpawnWithArmor", this.spawnWithArmor);
+        wv.putLong("LastGossipTime", this.lastGossipTime);
+        wv.putLong("LastGossipDecay", this.lastGossipDecayTime);
+
+        // Owner (write as a UUID string; matches read side with Uuids.STRING_CODEC)
+        this.dataTracker.get(OWNER_UNIQUE_ID)
+                .map(LazyEntityReference::getUuid)
+                .ifPresent(uuid -> wv.put("Owner", Uuids.STRING_CODEC, uuid));
+
+        // Inventory: list of { Slot, <stack fields…> } using a codec (no NBT classes)
+        // Only write non-empty stacks, same as before.
+        final int invSize = this.guardInventory.size();
+        List<StackWithSlot> invOut = new ArrayList<>();
+        for (int slot = 0; slot < invSize; ++slot) {
             ItemStack stack = this.guardInventory.getStack(slot);
-            if (stack.isEmpty()) continue;
-
-            NbtCompound entry = new NbtCompound();
-            entry.putByte("Slot", (byte) slot);
-
-            NbtElement raw = stack.toNbt(this.getRegistryManager());
-
-            if (raw instanceof NbtCompound stackNbt) {
-                entry.copyFrom(stackNbt);
-                out.add(entry);
-            } else {
-                // Extremely unlikely, but don't crash if it's not a compound
-                out.add(entry);
+            if (!stack.isEmpty()) {
+                invOut.add(new StackWithSlot(slot, stack.copy()));
             }
         }
-        nbt.put("Inventory", out);
+        if (!invOut.isEmpty()) {
+            wv.put("Inventory", StackWithSlot.CODEC.listOf(), invOut);
+        }
 
         if (this.getPatrolPos() != null) {
-            nbt.putInt("PatrolPosX", this.getPatrolPos().getX());
-            nbt.putInt("PatrolPosY", this.getPatrolPos().getY());
-            nbt.putInt("PatrolPosZ", this.getPatrolPos().getZ());
+            BlockPos p = this.getPatrolPos();
+            wv.putInt("PatrolPosX", p.getX());
+            wv.putInt("PatrolPosY", p.getY());
+            wv.putInt("PatrolPosZ", p.getZ());
         }
-        VillagerGossips.CODEC.encodeStart(NbtOps.INSTANCE, this.gossips)
-                .result()
-                .ifPresent(tag -> nbt.put("Gossips", tag));
-        this.writeAngerToNbt(nbt);
+
+        // Gossips via codec
+        wv.put("Gossips", VillagerGossips.CODEC, this.gossips);
+
+        // Anger
+        this.writeAngerToData(wv);
     }
 
     private void maybeDecayGossip() {
