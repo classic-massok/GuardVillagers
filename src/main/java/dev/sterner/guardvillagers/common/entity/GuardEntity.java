@@ -225,20 +225,20 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
         UUID owner = readUuidFlexible(nbt, "Owner");
         this.setOwnerId(owner); // accepts null
 
-        this.setGuardEntityVariant(nbt.getInt("Type").orElseThrow());
-        this.kickTicks = nbt.getInt("KickTicks").orElseThrow();
-        this.setFollowing(nbt.getBoolean("Following").orElseThrow());
-        this.interacting = nbt.getBoolean("Interacting").orElseThrow();
-        this.setPatrolling(nbt.getBoolean("Patrolling").orElseThrow());
-        this.shieldCoolDown = nbt.getInt("KickCooldown").orElseThrow();
-        this.kickCoolDown = nbt.getInt("ShieldCooldown").orElseThrow();
-        this.lastGossipDecayTime = nbt.getLong("LastGossipDecay").orElseThrow();
-        this.lastGossipTime = nbt.getLong("LastGossipTime").orElseThrow();
-        this.spawnWithArmor = nbt.getBoolean("SpawnWithArmor").orElseThrow();
+        this.setGuardEntityVariant(nbt.getInt("Type").orElse(0));
+        this.kickTicks         = nbt.getInt("KickTicks").orElse(0);
+        this.setFollowing(       nbt.getBoolean("Following").orElse(false));
+        this.interacting      =  nbt.getBoolean("Interacting").orElse(false);
+        this.setPatrolling(      nbt.getBoolean("Patrolling").orElse(false));
+        this.shieldCoolDown   =  nbt.getInt("KickCooldown").orElse(0);
+        this.kickCoolDown     =  nbt.getInt("ShieldCooldown").orElse(0);
+        this.lastGossipDecayTime = nbt.getLong("LastGossipDecay").orElse(0L);
+        this.lastGossipTime      = nbt.getLong("LastGossipTime").orElse(0L);
+        this.spawnWithArmor      = nbt.getBoolean("SpawnWithArmor").orElse(false);
         if (nbt.contains("PatrolPosX")) {
-            int x = nbt.getInt("PatrolPosX").orElseThrow();
-            int y = nbt.getInt("PatrolPosY").orElseThrow();
-            int z = nbt.getInt("PatrolPosZ").orElseThrow();
+            int x = nbt.getInt("PatrolPosX").orElse(0);
+            int y = nbt.getInt("PatrolPosY").orElse(0);
+            int z = nbt.getInt("PatrolPosZ").orElse(0);
             this.dataTracker.set(GUARD_POS, Optional.of(new BlockPos(x, y, z)));
         }
 
@@ -266,7 +266,7 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
             int slot = Byte.toUnsignedInt(slotOpt.get());
             if (slot >= this.guardInventory.size()) continue;
 
-            // In your env, fromNbt(...) returns Optional<ItemStack>
+            if (!hasItemId(entry)) continue;
             var stackOpt = ItemStack.fromNbt(this.getRegistryManager(), entry);
             if (stackOpt != null && stackOpt.isPresent()) {
                 ItemStack stack = stackOpt.get();
@@ -281,8 +281,8 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
             for (int i = 0; i < armorItems.size(); ++i) {
                 NbtCompound entry = armorItems.getCompoundOrEmpty(i);
 
-                // 1.21.5: returns ItemStack directly
-                ItemStack stack = ItemStack.fromNbt(this.getRegistryManager(), entry).orElseThrow();
+                if (!hasItemId(entry)) continue;
+                ItemStack stack = ItemStack.fromNbt(this.getRegistryManager(), entry).orElse(ItemStack.EMPTY);
                 if (stack.isEmpty()) continue;
 
                 // Determine the equipment slot for this stack
@@ -308,8 +308,8 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
             for (int i = 0; i < count; ++i) {
                 NbtCompound entry = handList.getCompoundOrEmpty(i);
 
-                // 1.21.5: fromNbt returns ItemStack directly (no Optional, no fromNbtOrEmpty)
-                ItemStack stack = ItemStack.fromNbt(this.getRegistryManager(), entry).orElseThrow();
+                if (!hasItemId(entry)) continue;
+                ItemStack stack = ItemStack.fromNbt(this.getRegistryManager(), entry).orElse(ItemStack.EMPTY);
                 if (stack.isEmpty()) continue;
 
                 int handSlot = (i == 0) ? 5 : 4; // keep your existing slot mapping
@@ -321,6 +321,12 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
             }
         }
 
+    }
+
+    private static boolean hasItemId(NbtCompound c) {
+        return c != null
+                && c.contains("id")
+                && !c.getString("id").orElse("").isEmpty();
     }
 
     @Nullable
@@ -487,8 +493,17 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
                 .orElse(null);
     }
 
-    public void setOwnerId(@Nullable UUID p_184754_1_) {
-        this.dataTracker.set(OWNER_UNIQUE_ID, Optional.of(new LazyEntityReference<>(this)));
+    public void setOwnerId(@Nullable UUID id) {
+        if (id == null) {
+            this.dataTracker.set(OWNER_UNIQUE_ID, Optional.empty());
+            return;
+        }
+        LivingEntity owner = (this.getWorld() != null) ? this.getWorld().getPlayerByUuid(id) : null;
+        if (owner != null) {
+            this.dataTracker.set(OWNER_UNIQUE_ID, Optional.of(new LazyEntityReference<>(owner)));
+        } else {
+            this.dataTracker.set(OWNER_UNIQUE_ID, Optional.empty()); // still persist to NBT via your readUuidFlexible
+        }
     }
 
     @Override
