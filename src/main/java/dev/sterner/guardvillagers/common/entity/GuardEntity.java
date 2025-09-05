@@ -492,8 +492,17 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
                 .orElse(null);
     }
 
-    public void setOwnerId(@Nullable UUID p_184754_1_) {
-        this.dataTracker.set(OWNER_UNIQUE_ID, Optional.of(new LazyEntityReference<>(this)));
+    public void setOwnerId(@Nullable UUID id) {
+        if (id == null) {
+            this.dataTracker.set(OWNER_UNIQUE_ID, Optional.empty());
+            return;
+        }
+        LivingEntity owner = (this.getWorld() != null) ? this.getWorld().getPlayerByUuid(id) : null;
+        if (owner != null) {
+            this.dataTracker.set(OWNER_UNIQUE_ID, Optional.of(new LazyEntityReference<>(owner)));
+        } else {
+            this.dataTracker.set(OWNER_UNIQUE_ID, Optional.empty()); // still persist to NBT via your readUuidFlexible
+        }
     }
 
     @Override
