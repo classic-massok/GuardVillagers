@@ -295,39 +295,6 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
         }
     }
 
-    @Nullable
-    private static UUID readUuidFlexible(NbtCompound nbt, String key) {
-        if (!nbt.contains(key)) return null;
-
-        // 1) String form: guard with type check, then use getString (always returns String)
-        if (nbt.contains(key)) {
-            String s = nbt.getString(key).orElse("");
-            if (!s.isEmpty()) {
-                try {
-                    return UUID.fromString(s);
-                } catch (IllegalArgumentException ignored) {}
-            }
-        }
-
-        // 2) 4-int array form (common in older saves)
-        if (nbt.contains(key)) {
-            int[] arr = nbt.getIntArray(key).orElse(new int[0]);
-            if (arr.length == 4) {
-                return Uuids.toUuid(arr);
-            }
-        }
-
-        // 3) 2-long array form
-        if (nbt.contains(key)) {
-            long[] arr = nbt.getLongArray(key).orElse(new long[0]);
-            if (arr.length == 2) {
-                return new UUID(arr[0], arr[1]);
-            }
-        }
-
-        return null;
-    }
-
     static final int consumeEventId = 2003;
 
     @Override
