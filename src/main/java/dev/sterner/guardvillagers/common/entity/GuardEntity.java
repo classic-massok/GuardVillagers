@@ -77,6 +77,8 @@ import net.minecraft.village.VillagerType;
 import net.minecraft.world.*;
 import org.jetbrains.annotations.Nullable;
 import net.minecraft.nbt.NbtElement;
+import net.minecraft.util.Uuids;
+
 import java.util.*;
 import java.util.function.Predicate;
 // TODO: Fix errors
@@ -235,97 +237,63 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
         this.lastGossipDecayTime = rv.getLong("LastGossipDecay", 0);
         this.lastGossipTime = rv.getLong("LastGossipTime", 0);
         this.spawnWithArmor = rv.getBoolean("SpawnWithArmor", false);
-        if (rv.getOptionalInt("PatrolPosX").isPresent()) {
-            int x = rv.getInt("PatrolPosX", 0);
+        rv.getOptionalInt("PatrolPosX").ifPresent(x -> {
             int y = rv.getInt("PatrolPosY", 0);
-            int z = rv.getInt("PatrolPosZ",0);
+            int z = rv.getInt("PatrolPosZ", 0);
             this.dataTracker.set(GUARD_POS, Optional.of(new BlockPos(x, y, z)));
-        }
+        });
 
         rv.read("Gossips", VillagerGossips.CODEC).ifPresent(decoded -> {
             this.gossips.clear();
-            this.gossips.add(decoded);  // or: this.gossips = decoded; if your field is a VillagerGossips
+            this.gossips.add(decoded);
         });
 
-        rv.getOptionalTypedListView("Inventory", StackWithSlot.CODEC).ifPresentOrElse(list -> {
-            // Preferred: entries are { slot, stack }
-            for (var sws : list) {
-                if (!sws.isValidSlot(this.guardInventory.size())) continue;
-                ItemStack stack = sws.stack();
-                if (!stack.isEmpty()) {
-                    this.guardInventory.setStack(sws.slot(), stack);
-                }
-            }
-        }, () -> {
-            // Fallback: plain list of ItemStacks (by index)
-            rv.getOptionalTypedListView("Inventory", ItemStack.CODEC).ifPresent(list -> {
-                int i = 0;
-                for (ItemStack stack : list) {
-                    if (i >= this.guardInventory.size()) break;
+        rv.getOptionalListReadView("Inventory").ifPresent((net.minecraft.storage.ReadView.ListReadView list) -> {
+            for (net.minecraft.storage.ReadView entry : list) {
+                int slot = Byte.toUnsignedInt(entry.getByte("Slot", (byte) -1));
+                if (slot >= this.guardInventory.size()) continue;
+
+                // Use MAP_CODEC here; annotate lambda to avoid generic T
+                entry.read(net.minecraft.item.ItemStack.MAP_CODEC).ifPresent((net.minecraft.item.ItemStack stack) -> {
                     if (!stack.isEmpty()) {
-                        this.guardInventory.setStack(i, stack);
+                        this.guardInventory.setStack(slot, stack);
                     }
-                    i++;
-                }
-            });
+                });
+            }
         });
 
-        rv.getOptionalTypedListView("ArmorItems", ItemStack.CODEC).ifPresent(list -> {
-            int i = 0; // vanilla order: 0=FEET, 1=LEGS, 2=CHEST, 3=HEAD
-            for (ItemStack stack : list) {
-                if (stack == null || stack.isEmpty()) { i++; continue; }
+        // Armor items: typed list of ItemStacks
+        rv.getOptionalTypedListView("ArmorItems", ItemStack.CODEC).ifPresent(armorList -> {
+            for (ItemStack stack : armorList) {
+                if (stack == null || stack.isEmpty()) continue;
 
-                // Prefer the EQUIPPABLE component, else your helper, else list-order fallback.
-                EquipmentSlot slot = null;
+                EquipmentSlot slot;
                 EquippableComponent eq = stack.get(DataComponentTypes.EQUIPPABLE);
-                if (eq != null) {
-                    slot = eq.slot();
-                } else {
-                    // If you keep a heuristic:
-                    slot = getPreferredEquipmentSlot(stack); // or MobEntity.getPreferredEquipmentSlot(stack)
-                    if (slot == null) {
-                        slot = armorListIndexToSlot(i); // FEET→LEGS→CHEST→HEAD
-                    }
-                }
+                slot = (eq != null) ? eq.slot() : getPreferredEquipmentSlot(stack);
 
-                if (slot != null) {
-                    int idx = GuardEntity.slotToInventoryIndex(slot);
-                    if (idx >= 0 && idx < this.guardInventory.size()) {
-                        this.guardInventory.setStack(idx, stack);
-                    }
-                }
-                i++;
+                int index = GuardEntity.slotToInventoryIndex(slot);
+                this.guardInventory.setStack(index, stack);
             }
         });
 
-        rv.getOptionalTypedListView("HandItems", ItemStack.CODEC).ifPresent(list -> {
+        // Hand items: typed list of ItemStacks; clamp to 2
+        rv.getOptionalTypedListView("HandItems", ItemStack.CODEC).ifPresent(handList -> {
             int i = 0;
-            for (ItemStack stack : list) {
+            for (ItemStack stack : handList) {
                 if (i >= 2) break;
-                if (stack != null && !stack.isEmpty()) {
-                    int handSlot = GuardEntity.slotToInventoryIndex(
-                            i == 0 ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND
-                    );
-                    if (handSlot < this.guardInventory.size()) {
-                        this.guardInventory.setStack(handSlot, stack);
-                    }
-                }
+                if (stack == null || stack.isEmpty()) { i++; continue; }
+                int handSlot = (i == 0) ? 5 : 4; // keep your existing mapping
+                this.guardInventory.setStack(handSlot, stack);
                 i++;
             }
-            if (!this.getWorld().isClient) this.readAngerFromData(this.getWorld(), rv);
         });
-    }
 
-    private static EquipmentSlot armorListIndexToSlot(int i) {
-        return switch (i) {
-            case 0 -> EquipmentSlot.FEET;
-            case 1 -> EquipmentSlot.LEGS;
-            case 2 -> EquipmentSlot.CHEST;
-            case 3 -> EquipmentSlot.HEAD;
-            default -> null;
-        };
+        // Anger data (method renamed in 1.21.6)
+        if (!this.getWorld().isClient) {
+            Angerable angerable = this;
+            angerable.readAngerFromData(this.getWorld(), rv);
+        }
     }
-
 
     @Nullable
     private static UUID readUuidFlexible(NbtCompound nbt, String key) {
@@ -384,7 +352,7 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
     }
 
     @Override
-    protected void writeCustomData(WriteView wv) {
+    public void writeCustomData(WriteView wv) {
         super.writeCustomData(wv);
 
         // Primitives
