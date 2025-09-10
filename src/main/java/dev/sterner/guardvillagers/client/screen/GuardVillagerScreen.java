@@ -9,6 +9,7 @@ import dev.sterner.guardvillagers.common.screenhandler.GuardVillagerScreenHandle
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ButtonTextures;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
@@ -24,15 +25,6 @@ import net.minecraft.util.math.MathHelper;
 
 public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandler> {
     private static final Identifier GUARD_GUI_TEXTURES = GuardVillagers.id("textures/gui/inventory.png");
-    /*
-    private static final Identifier GUARD_GUI_TEXTURES = GuardVillagers.id("textures/gui/inventory.png");
-    private static final Identifier GUARD_FOLLOWING_ICON = GuardVillagers.id( "textures/gui/following_icons.png");
-    private static final Identifier GUARD_NOT_FOLLOWING_ICON = GuardVillagers.id("textures/gui/not_following_icons.png");
-    private static final Identifier PATROL_ICON = GuardVillagers.id( "textures/gui/patrollingui.png");
-    private static final Identifier NOT_PATROLLING_ICON = GuardVillagers.id("textures/gui/notpatrollingui.png");
-
-
-     */
     private static final ButtonTextures GUARD_FOLLOWING_ICONS = new ButtonTextures(GuardVillagers.id( "following/following"),GuardVillagers.id( "following/following_highlighted"));
     private static final ButtonTextures GUARD_NOT_FOLLOWING_ICONS = new ButtonTextures(GuardVillagers.id( "following/not_following"),GuardVillagers.id("following/not_following_highlighted"));
     private static final ButtonTextures GUARD_PATROLLING_ICONS = new ButtonTextures(GuardVillagers.id( "patrolling/patrolling1"), GuardVillagers.id("patrolling/patrolling2"));
@@ -83,7 +75,7 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
 
         // draw the full GUI texture (no manual shader calls needed in 1.21.x)
         ctx.drawTexture(
-                net.minecraft.client.render.RenderLayer::getGuiTextured, // RenderLayer supplier
+                RenderPipelines.GUI_TEXTURED, // RenderLayer supplier
                 GUARD_GUI_TEXTURES,
                 i, j,                  // x, y on screen
                 0f, 0f,             // u, v in texture
@@ -95,22 +87,12 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
         InventoryScreen.drawEntity(ctx, i + 51, j + 75, (i + 51), (j + 75 - 50), 30, 0.0625f, this.mousePosX, this.mousePosY, this.guardEntity);
     }
 
-    /*
-    CONTAINER(Identifier.ofVanilla("hud/heart/container"), Identifier.ofVanilla("hud/heart/container_blinking"), Identifier.ofVanilla("hud/heart/container"), Identifier.ofVanilla("hud/heart/container_blinking"), Identifier.ofVanilla("hud/heart/container_hardcore"), Identifier.ofVanilla("hud/heart/container_hardcore_blinking"), Identifier.ofVanilla("hud/heart/container_hardcore"), Identifier.ofVanilla("hud/heart/container_hardcore_blinking")),
-        NORMAL(Identifier.ofVanilla("hud/heart/full"), Identifier.ofVanilla("hud/heart/full_blinking"), Identifier.ofVanilla("hud/heart/half"), Identifier.ofVanilla("hud/heart/half_blinking"), Identifier.ofVanilla("hud/heart/hardcore_full"), Identifier.ofVanilla("hud/heart/hardcore_full_blinking"), Identifier.ofVanilla("hud/heart/hardcore_half"), Identifier.ofVanilla("hud/heart/hardcore_half_blinking")),
-        POISONED(Identifier.ofVanilla("hud/heart/poisoned_full"), Identifier.ofVanilla("hud/heart/poisoned_full_blinking"), Identifier.ofVanilla("hud/heart/poisoned_half"), Identifier.ofVanilla("hud/heart/poisoned_half_blinking"), Identifier.ofVanilla("hud/heart/poisoned_hardcore_full"), Identifier.ofVanilla("hud/heart/poisoned_hardcore_full_blinking"), Identifier.ofVanilla("hud/heart/poisoned_hardcore_half"), Identifier.ofVanilla("hud/heart/poisoned_hardcore_half_blinking")),
-        WITHERED(Identifier.ofVanilla("hud/heart/withered_full"), Identifier.ofVanilla("hud/heart/withered_full_blinking"), Identifier.ofVanilla("hud/heart/withered_half"), Identifier.ofVanilla("hud/heart/withered_half_blinking"), Identifier.ofVanilla("hud/heart/withered_hardcore_full"), Identifier.ofVanilla("hud/heart/withered_hardcore_full_blinking"), Identifier.ofVanilla("hud/heart/withered_hardcore_half"), Identifier.ofVanilla("hud/heart/withered_hardcore_half_blinking")),
-        ABSORBING(Identifier.ofVanilla("hud/heart/absorbing_full"), Identifier.ofVanilla("hud/heart/absorbing_full_blinking"), Identifier.ofVanilla("hud/heart/absorbing_half"), Identifier.ofVanilla("hud/heart/absorbing_half_blinking"), Identifier.ofVanilla("hud/heart/absorbing_hardcore_full"), Identifier.ofVanilla("hud/heart/absorbing_hardcore_full_blinking"), Identifier.ofVanilla("hud/heart/absorbing_hardcore_half"), Identifier.ofVanilla("hud/heart/absorbing_hardcore_half_blinking")),
-        FROZEN(Identifier.ofVanilla("hud/heart/frozen_full"), Identifier.ofVanilla("hud/heart/frozen_full_blinking"), Identifier.ofVanilla("hud/heart/frozen_half"), Identifier.ofVanilla("hud/heart/frozen_half_blinking"), Identifier.ofVanilla("hud/heart/frozen_hardcore_full"), Identifier.ofVanilla("hud/heart/frozen_hardcore_full_blinking"), Identifier.ofVanilla("hud/heart/frozen_hardcore_half"), Identifier.ofVanilla("hud/heart/frozen_hardcore_half_blinking"));
-
-     */
-
     private static final Identifier ARMOR_EMPTY_TEXTURE = Identifier.ofVanilla("hud/armor_empty");
     private static final Identifier ARMOR_HALF_TEXTURE = Identifier.ofVanilla("hud/armor_half");
     private static final Identifier ARMOR_FULL_TEXTURE = Identifier.ofVanilla("hud/armor_full");
 
     private void drawHeart(DrawContext context, HeartType type, int x, int y, boolean half) {
-        context.drawGuiTexture(net.minecraft.client.render.RenderLayer::getGuiTextured, type.getTexture(half), x, y, 9, 9);
+        context.drawGuiTexture(RenderPipelines.GUI_TEXTURED, type.getTexture(half), x, y, 9, 9);
     }
 
     @Override
@@ -140,14 +122,14 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
         }
         //Armor
         for (int i = 0; i < 10; i++) {
-            ctx.drawGuiTexture(net.minecraft.client.render.RenderLayer::getGuiTextured, ARMOR_EMPTY_TEXTURE, (i * 8) + 80, 30, 9, 9);
+            ctx.drawGuiTexture(RenderPipelines.GUI_TEXTURED, ARMOR_EMPTY_TEXTURE, (i * 8) + 80, 30, 9, 9);
         }
         for (int i = 0; i < armor / 2; i++) {
             if (armor % 2 != 0 && armor / 2 == i + 1) {
-                ctx.drawGuiTexture(net.minecraft.client.render.RenderLayer::getGuiTextured, ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
-                ctx.drawGuiTexture(net.minecraft.client.render.RenderLayer::getGuiTextured, ARMOR_HALF_TEXTURE, ((i + 1) * 8) + 80, 30, 9, 9);
+                ctx.drawGuiTexture(RenderPipelines.GUI_TEXTURED, ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
+                ctx.drawGuiTexture(RenderPipelines.GUI_TEXTURED, ARMOR_HALF_TEXTURE, ((i + 1) * 8) + 80, 30, 9, 9);
             } else {
-                ctx.drawGuiTexture(net.minecraft.client.render.RenderLayer::getGuiTextured, ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
+                ctx.drawGuiTexture(RenderPipelines.GUI_TEXTURED, ARMOR_FULL_TEXTURE, (i * 8) + 80, 30, 9, 9);
             }
         }
 
@@ -188,7 +170,7 @@ public class GuardVillagerScreen extends HandledScreen<GuardVillagerScreenHandle
         public void renderWidget(DrawContext graphics, int mouseX, int mouseY, float partialTicks) {
             ButtonTextures icon = this.requirementsForTexture() ? this.texture : this.newTexture;
             Identifier resourcelocation = icon.get(this.isFocused(), this.isSelected());
-            graphics.drawGuiTexture(net.minecraft.client.render.RenderLayer::getGuiTextured, resourcelocation, this.getX(), this.getY(), this.width, this.height);
+            graphics.drawGuiTexture(RenderPipelines.GUI_TEXTURED, resourcelocation, this.getX(), this.getY(), this.width, this.height);
         }
     }
 
