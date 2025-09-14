@@ -7,15 +7,15 @@ import dev.sterner.guardvillagers.client.model.GuardArmorModel;
 import dev.sterner.guardvillagers.client.model.GuardVillagerModel;
 import dev.sterner.guardvillagers.client.render.state.GuardBipedRenderState;
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
+import net.minecraft.client.model.ModelPart;
 import net.minecraft.client.render.entity.BipedEntityRenderer;
 import net.minecraft.client.render.entity.EntityRendererFactory;
-import net.minecraft.client.render.entity.LivingEntityRenderer;
 import net.minecraft.client.render.entity.feature.ArmorFeatureRenderer;
-import net.minecraft.client.render.entity.feature.HeldItemFeatureRenderer;
 import net.minecraft.client.render.entity.model.BipedEntityModel;
 import net.minecraft.client.render.entity.model.EntityModelLayers;
 import net.minecraft.client.render.entity.model.EquipmentModelData;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.CrossbowItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Arm;
@@ -35,38 +35,54 @@ public class GuardRenderer extends BipedEntityRenderer<
     private final BipedEntityModel<GuardBipedRenderState> normal;
 
     public GuardRenderer(EntityRendererFactory.Context context) {
-        // Base model: villager-shaped guard
         super(context, new GuardVillagerModel(context.getPart(GuardVillagersClient.GUARD)), 0.5F);
         this.normal = this.getModel();
 
-        // Optional Steve-shaped guard (player model). PlayerEntityModel still extends biped model in 1.21.x,
-        // so we can keep it as our generic biped model type here.
-        BipedEntityModel<GuardBipedRenderState> steve = new BipedEntityModel<>(context.getPart(EntityModelLayers.PLAYER));
+        BipedEntityModel<GuardBipedRenderState> steve =
+                new BipedEntityModel<>(context.getPart(EntityModelLayers.PLAYER));
+        this.model = GuardVillagersConfig.useSteveModel ? steve : normal;
 
-        if (GuardVillagersConfig.useSteveModel) {
-            this.model = steve;
-        } else {
-            this.model = normal;
+        // --- NEW: build independent models per slot ---
+        BipedEntityModel<GuardBipedRenderState> headOuter =
+                new GuardArmorModel(context.getPart(GuardVillagersClient.GUARD_ARMOR_OUTER_HEAD));
+        BipedEntityModel<GuardBipedRenderState> chestOuter =
+                new GuardArmorModel(context.getPart(GuardVillagersClient.GUARD_ARMOR_OUTER_CHEST));
+        BipedEntityModel<GuardBipedRenderState> feetOuter =
+                new GuardArmorModel(context.getPart(GuardVillagersClient.GUARD_ARMOR_OUTER_FEET));
+        BipedEntityModel<GuardBipedRenderState> legsInner =
+                new GuardArmorModel(context.getPart(GuardVillagersClient.GUARD_ARMOR_INNER_LEGS));
+
+        // Permanently prune visibility so each instance only renders its slot
+        pruneToSlot(headOuter,  EquipmentSlot.HEAD);
+        pruneToSlot(chestOuter, EquipmentSlot.CHEST);
+        pruneToSlot(legsInner,  EquipmentSlot.LEGS);  // leggings -> inner
+        pruneToSlot(feetOuter,  EquipmentSlot.FEET);
+
+        // Adult vs Baby model sets: if you don't have baby shapes, reuse adult safely.
+        EquipmentModelData<BipedEntityModel<GuardBipedRenderState>> adult =
+                new EquipmentModelData<>(headOuter, chestOuter, legsInner, feetOuter);
+
+        this.addFeature(new ArmorFeatureRenderer<>(
+                this,
+                adult,          // state.baby == false -> uses this set
+                adult,          // state.baby == true  -> same set; fine if guards aren’t “baby”
+                context.getEquipmentRenderer()
+        ));
+    }
+
+    private static void pruneToSlot(BipedEntityModel<?> m, EquipmentSlot slot) {
+        // Hide everything first
+        m.head.visible = m.hat.visible = false;
+        m.body.visible = m.rightArm.visible = m.leftArm.visible = false;
+        m.rightLeg.visible = m.leftLeg.visible = false;
+
+        // Enable only what this slot needs
+        switch (slot) {
+            case HEAD -> { m.head.visible = true; m.hat.visible = true; }
+            case CHEST -> { m.body.visible = true; m.rightArm.visible = true; m.leftArm.visible = true; }
+            case LEGS, FEET -> { m.rightLeg.visible = true; m.leftLeg.visible = true; }
+            default -> {}
         }
-
-        // Create concrete variables first (helps the compiler)
-        BipedEntityModel<GuardBipedRenderState> innerArmor =
-                !GuardVillagersConfig.useSteveModel
-                        ? new GuardArmorModel(context.getPart(GuardVillagersClient.GUARD_ARMOR_INNER))
-                        : new BipedEntityModel<>(context.getPart(GuardVillagersClient.GUARD_ARMOR_INNER));
-
-        BipedEntityModel<GuardBipedRenderState> outerArmor =
-                !GuardVillagersConfig.useSteveModel
-                        ? new GuardArmorModel(context.getPart(GuardVillagersClient.GUARD_ARMOR_OUTER))
-                        : new BipedEntityModel<>(context.getPart(GuardVillagersClient.GUARD_ARMOR_OUTER));
-
-
-        EquipmentModelData<BipedEntityModel<GuardBipedRenderState>> innerData =
-                new EquipmentModelData<>(innerArmor, innerArmor, innerArmor, innerArmor);
-        EquipmentModelData<BipedEntityModel<GuardBipedRenderState>> outerData =
-                new EquipmentModelData<>(outerArmor, outerArmor, outerArmor, outerArmor);
-
-        this.addFeature(new ArmorFeatureRenderer<>(this, innerData, outerData, context.getEquipmentRenderer()));
     }
 
     /* --------------------
