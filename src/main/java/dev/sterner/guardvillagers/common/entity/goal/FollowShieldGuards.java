@@ -25,16 +25,16 @@ public class FollowShieldGuards extends Goal {
 
     @Override
     public boolean canStart() {
-        List<? extends GuardEntity> list = this.taskOwner.getWorld().getNonSpectatingEntities(this.taskOwner.getClass(), this.taskOwner.getBoundingBox().expand(8.0D, 8.0D, 8.0D));
+        List<? extends GuardEntity> list = this.taskOwner.getEntityWorld().getNonSpectatingEntities(this.taskOwner.getClass(), this.taskOwner.getBoundingBox().expand(8.0D, 8.0D, 8.0D));
         if (!list.isEmpty()) {
             for (GuardEntity guard : list) {
                 if (!guard.isInvisible() && guard.getOffHandStack().getItem() == Items.SHIELD && guard.isBlocking() // Might create compatibility problems
                 ) {
-                    if (!(this.taskOwner.getWorld() instanceof ServerWorld serverWorld)) {
+                    if (!(this.taskOwner.getEntityWorld() instanceof ServerWorld serverWorld)) {
                         return false;
                     }
 
-                    List<GuardEntity> nearby = this.taskOwner.getWorld().getEntitiesByClass(
+                    List<GuardEntity> nearby = this.taskOwner.getEntityWorld().getEntitiesByClass(
                             GuardEntity.class,
                             this.taskOwner.getBoundingBox().expand(5.0D),
                             g -> NEARBY_GUARDS.test(serverWorld, guard, g)

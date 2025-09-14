@@ -9,10 +9,12 @@ import dev.sterner.guardvillagers.client.render.state.GuardBipedRenderState;
 import dev.sterner.guardvillagers.common.entity.GuardEntity;
 import net.minecraft.client.render.entity.BipedEntityRenderer;
 import net.minecraft.client.render.entity.EntityRendererFactory;
+import net.minecraft.client.render.entity.LivingEntityRenderer;
 import net.minecraft.client.render.entity.feature.ArmorFeatureRenderer;
-import net.minecraft.client.render.entity.model.ArmorEntityModel;
+import net.minecraft.client.render.entity.feature.HeldItemFeatureRenderer;
 import net.minecraft.client.render.entity.model.BipedEntityModel;
 import net.minecraft.client.render.entity.model.EntityModelLayers;
+import net.minecraft.client.render.entity.model.EquipmentModelData;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.CrossbowItem;
 import net.minecraft.item.ItemStack;
@@ -30,7 +32,6 @@ public class GuardRenderer extends BipedEntityRenderer<
         GuardBipedRenderState,
         BipedEntityModel<GuardBipedRenderState>> {
 
-    private final BipedEntityModel<GuardBipedRenderState> steve;
     private final BipedEntityModel<GuardBipedRenderState> normal;
 
     public GuardRenderer(EntityRendererFactory.Context context) {
@@ -40,7 +41,7 @@ public class GuardRenderer extends BipedEntityRenderer<
 
         // Optional Steve-shaped guard (player model). PlayerEntityModel still extends biped model in 1.21.x,
         // so we can keep it as our generic biped model type here.
-        this.steve = new BipedEntityModel<>(context.getPart(EntityModelLayers.PLAYER));
+        BipedEntityModel<GuardBipedRenderState> steve = new BipedEntityModel<>(context.getPart(EntityModelLayers.PLAYER));
 
         if (GuardVillagersConfig.useSteveModel) {
             this.model = steve;
@@ -49,18 +50,23 @@ public class GuardRenderer extends BipedEntityRenderer<
         }
 
         // Create concrete variables first (helps the compiler)
-        ArmorEntityModel<GuardBipedRenderState> innerArmor =
+        BipedEntityModel<GuardBipedRenderState> innerArmor =
                 !GuardVillagersConfig.useSteveModel
                         ? new GuardArmorModel(context.getPart(GuardVillagersClient.GUARD_ARMOR_INNER))
-                        : new ArmorEntityModel<>(context.getPart(EntityModelLayers.PLAYER_INNER_ARMOR));
+                        : new BipedEntityModel<>(context.getPart(GuardVillagersClient.GUARD_ARMOR_INNER));
 
-        ArmorEntityModel<GuardBipedRenderState> outerArmor =
+        BipedEntityModel<GuardBipedRenderState> outerArmor =
                 !GuardVillagersConfig.useSteveModel
                         ? new GuardArmorModel(context.getPart(GuardVillagersClient.GUARD_ARMOR_OUTER))
-                        : new ArmorEntityModel<>(context.getPart(EntityModelLayers.PLAYER_OUTER_ARMOR));
+                        : new BipedEntityModel<>(context.getPart(GuardVillagersClient.GUARD_ARMOR_OUTER));
 
-        // Now add the feature with EXPLICIT type parameters:
-        this.addFeature(new ArmorFeatureRenderer<>(this, innerArmor, outerArmor, context.getEquipmentRenderer()));
+
+        EquipmentModelData<BipedEntityModel<GuardBipedRenderState>> innerData =
+                new EquipmentModelData<>(innerArmor, innerArmor, innerArmor, innerArmor);
+        EquipmentModelData<BipedEntityModel<GuardBipedRenderState>> outerData =
+                new EquipmentModelData<>(outerArmor, outerArmor, outerArmor, outerArmor);
+
+        this.addFeature(new ArmorFeatureRenderer<>(this, innerData, outerData, context.getEquipmentRenderer()));
     }
 
     /* --------------------

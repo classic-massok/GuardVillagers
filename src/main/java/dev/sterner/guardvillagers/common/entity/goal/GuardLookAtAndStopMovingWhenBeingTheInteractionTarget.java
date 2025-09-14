@@ -19,7 +19,7 @@ public class GuardLookAtAndStopMovingWhenBeingTheInteractionTarget extends Goal 
 
     @Override
     public boolean canStart() {
-        List<VillagerEntity> list = this.guard.getWorld().getNonSpectatingEntities(VillagerEntity.class, guard.getBoundingBox().expand(10.0D));
+        List<VillagerEntity> list = this.guard.getEntityWorld().getNonSpectatingEntities(VillagerEntity.class, guard.getBoundingBox().expand(10.0D));
         if (!list.isEmpty()) {
             for (VillagerEntity villager : list) {
                 if (villager.getBrain().hasMemoryModule(MemoryModuleType.INTERACTION_TARGET) && villager.getBrain().getOptionalRegisteredMemory(MemoryModuleType.INTERACTION_TARGET).get().equals(guard)) {

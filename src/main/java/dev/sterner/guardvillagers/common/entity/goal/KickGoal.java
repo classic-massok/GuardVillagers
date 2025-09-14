@@ -24,7 +24,7 @@ public class KickGoal extends Goal {
             guard.kickTicks = 10;
         }
 
-        if (!(guard.getWorld() instanceof ServerWorld serverWorld)) {
+        if (!(guard.getEntityWorld() instanceof ServerWorld serverWorld)) {
             return;
         }
 

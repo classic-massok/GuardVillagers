@@ -29,7 +29,7 @@ public abstract class MobEntityMixin extends LivingEntity implements Targeter {
         }
         boolean isVillager = target.getType() == EntityType.VILLAGER || target instanceof GuardEntity;
         if (isVillager) {
-            List<MobEntity> list = ((MobEntity)(Object)this).getWorld().getNonSpectatingEntities(MobEntity.class, ((MobEntity)(Object)this).getBoundingBox().expand(GuardVillagersConfig.guardVillagerHelpRange, 5.0D, GuardVillagersConfig.guardVillagerHelpRange));
+            List<MobEntity> list = ((MobEntity)(Object)this).getEntityWorld().getNonSpectatingEntities(MobEntity.class, ((MobEntity)(Object)this).getBoundingBox().expand(GuardVillagersConfig.guardVillagerHelpRange, 5.0D, GuardVillagersConfig.guardVillagerHelpRange));
             for (MobEntity mobEntity : list) {
                 if ((mobEntity instanceof GuardEntity || ((MobEntity)(Object)this).getType() == EntityType.IRON_GOLEM) && mobEntity.getTarget() == null) {
                     mobEntity.setTarget(((MobEntity)(Object)this));
