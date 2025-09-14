@@ -23,7 +23,7 @@ public class RepairGolemTask extends VillagerWorkTask {
 
     @Override
     protected boolean shouldRun(ServerWorld worldIn, VillagerEntity owner) {
-        List<IronGolemEntity> list = owner.getWorld().getNonSpectatingEntities(IronGolemEntity.class, owner.getBoundingBox().expand(10.0D, 5.0D, 10.0D));
+        List<IronGolemEntity> list = owner.getEntityWorld().getNonSpectatingEntities(IronGolemEntity.class, owner.getBoundingBox().expand(10.0D, 5.0D, 10.0D));
         if (!list.isEmpty()) {
             for (IronGolemEntity golem : list) {
                 if (!golem.isInvisible() && golem.isAlive() && golem.getType() == EntityType.IRON_GOLEM) {
