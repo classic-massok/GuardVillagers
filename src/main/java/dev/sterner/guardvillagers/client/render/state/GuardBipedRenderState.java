@@ -6,6 +6,7 @@ import net.minecraft.util.Hand;
 
 public class GuardBipedRenderState extends BipedEntityRenderState {
     public int kickTicks;
+    public boolean hasRangedWeapon;
 
     // add this so we can choose the texture without the entity
     public int guardVariant;
