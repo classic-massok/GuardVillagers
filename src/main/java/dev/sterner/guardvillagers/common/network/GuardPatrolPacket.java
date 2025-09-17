@@ -23,7 +23,7 @@ public record GuardPatrolPacket(int guardId, boolean pressed) implements CustomP
 
     public void handle(ServerPlayNetworking.Context context) {
 
-        Entity entity = context.player().getWorld().getEntityById(guardId);
+        Entity entity = context.player().getEntityWorld().getEntityById(guardId);
         if (entity instanceof GuardEntity guardEntity) {
             BlockPos pos = guardEntity.getBlockPos();
             if (guardEntity.getBlockPos() != null) {

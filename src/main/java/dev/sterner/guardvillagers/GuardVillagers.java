@@ -68,7 +68,7 @@ public class GuardVillagers implements ModInitializer {
 
     public static final Item GUARD_SPAWN_EGG = Items.register(
             GUARD_SPAWN_EGG_KEY,
-            (Item.Settings settings) -> new SpawnEggItem(GUARD_VILLAGER, settings),
+            SpawnEggItem::new,
             new Item.Settings()
     );
 
@@ -122,7 +122,7 @@ public class GuardVillagers implements ModInitializer {
                     guardEntity.initialize(world, world.getLocalDifficulty(villagerEntity.getBlockPos()), SpawnReason.NATURAL, null);
                     guardEntity.refreshPositionAndAngles(villagerEntity.getBlockPos(), 0.0f, 0.0f);
 
-                    int i = GuardEntity.getRandomTypeForBiome(guardEntity.getWorld(), guardEntity.getBlockPos());
+                    int i = GuardEntity.getRandomTypeForBiome(guardEntity.getEntityWorld(), guardEntity.getBlockPos());
                     guardEntity.setGuardVariant(i);
                     guardEntity.setPersistent();
                     guardEntity.setCustomName(villagerEntity.getCustomName());
@@ -152,7 +152,7 @@ public class GuardVillagers implements ModInitializer {
             shouldDamage = false;
         }
         if (isVillager && attacker instanceof MobEntity) {
-            List<MobEntity> list = attacker.getWorld().getNonSpectatingEntities(MobEntity.class, attacker.getBoundingBox().expand(GuardVillagersConfig.guardVillagerHelpRange, 5.0D, GuardVillagersConfig.guardVillagerHelpRange));
+            List<MobEntity> list = attacker.getEntityWorld().getNonSpectatingEntities(MobEntity.class, attacker.getBoundingBox().expand(GuardVillagersConfig.guardVillagerHelpRange, 5.0D, GuardVillagersConfig.guardVillagerHelpRange));
             for (MobEntity mob : list) {
                 boolean type = mob.getType() == GUARD_VILLAGER || mob.getType() == EntityType.IRON_GOLEM;
                 boolean trueSourceGolem = attacker.getType() == GUARD_VILLAGER || attacker.getType() == EntityType.IRON_GOLEM;
@@ -193,13 +193,13 @@ public class GuardVillagers implements ModInitializer {
         GuardEntity guard = GUARD_VILLAGER.create(world, SpawnReason.MOB_SUMMONED);
         if (guard == null)
             return;
-        if (player.getWorld().isClient()) {
+        if (player.getEntityWorld().isClient()) {
             ParticleEffect particleEffect = ParticleTypes.HAPPY_VILLAGER;
             for (int i = 0; i < 10; ++i) {
                 double d0 = villagerEntity.getRandom().nextGaussian() * 0.02D;
                 double d1 = villagerEntity.getRandom().nextGaussian() * 0.02D;
                 double d2 = villagerEntity.getRandom().nextGaussian() * 0.02D;
-                villagerEntity.getWorld().addParticleClient(particleEffect, villagerEntity.getX() + (double) (villagerEntity.getRandom().nextFloat() * villagerEntity.getWidth() * 2.0F) - (double) villagerEntity.getWidth(), villagerEntity.getY() + 0.5D + (double) (villagerEntity.getRandom().nextFloat() * villagerEntity.getWidth()),
+                villagerEntity.getEntityWorld().addParticleClient(particleEffect, villagerEntity.getX() + (double) (villagerEntity.getRandom().nextFloat() * villagerEntity.getWidth() * 2.0F) - (double) villagerEntity.getWidth(), villagerEntity.getY() + 0.5D + (double) (villagerEntity.getRandom().nextFloat() * villagerEntity.getWidth()),
                         villagerEntity.getZ() + (double) (villagerEntity.getRandom().nextFloat() * villagerEntity.getWidth() * 2.0F) - (double) villagerEntity.getWidth(), d0, d1, d2);
             }
         }
@@ -210,7 +210,7 @@ public class GuardVillagers implements ModInitializer {
         guard.equipStack(EquipmentSlot.MAINHAND, itemstack.copy());
         guard.guardInventory.setStack(5, itemstack.copy());
 
-        int i = GuardEntity.getRandomTypeForBiome(guard.getWorld(), guard.getBlockPos());
+        int i = GuardEntity.getRandomTypeForBiome(guard.getEntityWorld(), guard.getBlockPos());
         guard.setGuardVariant(i);
         guard.setPersistent();
         guard.setCustomName(villagerEntity.getCustomName());
@@ -230,6 +230,6 @@ public class GuardVillagers implements ModInitializer {
 
     public static boolean hotvChecker(PlayerEntity player, GuardEntity guard) {
         return player.hasStatusEffect(StatusEffects.HERO_OF_THE_VILLAGE) && GuardVillagersConfig.giveGuardStuffHotv
-                || !GuardVillagersConfig.giveGuardStuffHotv || guard.getPlayerEntityReputation(player) > GuardVillagersConfig.reputationRequirement && !player.getWorld().isClient();
+                || !GuardVillagersConfig.giveGuardStuffHotv || guard.getPlayerEntityReputation(player) > GuardVillagersConfig.reputationRequirement && !player.getEntityWorld().isClient();
     }
 }

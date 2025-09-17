@@ -167,7 +167,7 @@ public class RangedCrossbowAttackPassiveGoal<T extends PathAwareEntity & RangedA
     }
 
     private boolean friendlyInLineOfSight() {
-        List<Entity> list = this.mob.getWorld().getOtherEntities(this.mob, this.mob.getBoundingBox().expand(5.0D));
+        List<Entity> list = this.mob.getEntityWorld().getOtherEntities(this.mob, this.mob.getBoundingBox().expand(5.0D));
         for (Entity guard : list) {
             if (guard != this.mob.getTarget()) {
                 boolean isVillager = ((GuardEntity) this.mob).getOwner() == guard || guard.getType() == EntityType.VILLAGER || guard.getType() == GuardVillagers.GUARD_VILLAGER || guard.getType() == EntityType.IRON_GOLEM;

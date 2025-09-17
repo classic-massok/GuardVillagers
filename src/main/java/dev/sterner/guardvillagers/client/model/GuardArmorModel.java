@@ -2,10 +2,9 @@ package dev.sterner.guardvillagers.client.model;
 
 import dev.sterner.guardvillagers.client.render.state.GuardBipedRenderState;
 import net.minecraft.client.model.*;
-import net.minecraft.client.render.entity.model.ArmorEntityModel;
 import net.minecraft.client.render.entity.model.BipedEntityModel;
 
-public class GuardArmorModel extends ArmorEntityModel<GuardBipedRenderState> {
+public class GuardArmorModel extends BipedEntityModel<GuardBipedRenderState> {
     public GuardArmorModel(ModelPart part) {
         super(part);
     }
@@ -21,4 +20,5 @@ public class GuardArmorModel extends ArmorEntityModel<GuardBipedRenderState> {
         ModelData modelData = BipedEntityModel.getModelData(new Dilation(0.5F), 0.0F);
         return TexturedModelData.of(modelData, 64, 32);
     }
+
 }
