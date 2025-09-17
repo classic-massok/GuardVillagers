@@ -3,6 +3,9 @@ package dev.sterner.guardvillagers.client.model;
 import dev.sterner.guardvillagers.client.render.state.GuardBipedRenderState;
 import net.minecraft.client.model.*;
 import net.minecraft.client.render.entity.model.BipedEntityModel;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.item.BowItem;
+import net.minecraft.item.CrossbowItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Arm;
 import net.minecraft.util.Hand;
@@ -34,8 +37,8 @@ public class GuardVillagerModel extends BipedEntityModel<GuardBipedRenderState> 
                 ModelTransform.origin(-5.0F, 2.0F, 0.0F));
         ModelPartData leftArm = partdefinition.addChild("left_arm", ModelPartBuilder.create().uv(33, 48)
                 .cuboid(-1.0F, -2.0F, -2.0F, 4, 12, 4, new Dilation(0.0F)), ModelTransform.origin(5.0F, 2.0F, 0.0F));
-        torso.addChild("quiver", ModelPartBuilder.create().uv(100, 0).cuboid(-2.5F, -2.0F, 0.0F, 5, 10, 5,
-                new Dilation(0.0F)), ModelTransform.origin(0.5F, 3.0F, 2.3F));
+        torso.addChild("quiver", ModelPartBuilder.create().uv(100, 0).cuboid(-2.5F, -2.0F, 0.0F, 5, 9, 5,
+                new Dilation(0.0F)), ModelTransform.origin(0.5F, 3.8F, 2.3F));
         head.addChild("nose",
                 ModelPartBuilder.create().uv(54, 0).cuboid(-1.0F, 0.0F, -2.0F, 2, 4, 2, new Dilation(0.0F)),
                 ModelTransform.origin(0.0F, -3.0F, -4.0F));
@@ -44,10 +47,10 @@ public class GuardVillagerModel extends BipedEntityModel<GuardBipedRenderState> 
         partdefinition.addChild("left_leg", ModelPartBuilder.create().uv(16, 28).cuboid(-2.0F, 0.0F, -2.0F,
                 4, 12, 4, new Dilation(0.0F)), ModelTransform.origin(1.9F, 12.0F, 0.0F));
         leftArm.addChild("shoulderPad_right",
-                ModelPartBuilder.create().uv(72, 33).mirrored().cuboid(0.0F, 0.0F, -3.0F, 5, 3, 6, new Dilation(0.0F)),
+                ModelPartBuilder.create().uv(72, 33).mirrored().cuboid(0.1F, 0.23F, -3.0F, 5, 3, 6, new Dilation(0.0F)),
                 ModelTransform.origin(-0.5F, -3.5F, 0.0F));
         rightArm.addChild("shoulderPad_left",
-                ModelPartBuilder.create().uv(72, 33).cuboid(-5.0F, 0.0F, -3.0F, 5, 3, 6, new Dilation(0.0F)),
+                ModelPartBuilder.create().uv(72, 33).cuboid(-5.1F, 0.23F, -3.0F, 5, 3, 6, new Dilation(0.0F)),
                 ModelTransform.origin(0.5F, -3.5F, 0.0F));
         head.addChild("hat", ModelPartBuilder.create().uv(0, 0).cuboid(-4.5F, -11.0F, -4.5F, 9,
                 11, 9, new Dilation(0.0F)), ModelTransform.origin(0.0F, 0.0F, 0.0F));
@@ -81,6 +84,20 @@ public class GuardVillagerModel extends BipedEntityModel<GuardBipedRenderState> 
             this.eatingAnimationRightHand(Hand.OFF_HAND, state, ageInTicks);
             this.eatingAnimationLeftHand(Hand.MAIN_HAND, state, ageInTicks);
         }
+
+        ArmLShoulderPad.roll = -0.34906585F;
+        ArmRShoulderPad.roll =  0.34906585F;
+        quiver.roll = 0.2617993877991494F;
+
+        boolean wearingChest = !state.equippedChestStack.isEmpty();
+        ArmLShoulderPad.visible = !wearingChest;
+        ArmRShoulderPad.visible = !wearingChest;
+
+        if (wearingChest) {
+            quiver.originZ = 3.01F;
+        }
+
+        this.quiver.visible = state.hasRangedWeapon;
     }
 
     public void eatingAnimationRightHand(Hand hand, GuardBipedRenderState state, float ageInTicks) {
