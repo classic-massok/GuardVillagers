@@ -104,12 +104,14 @@ public class GuardRenderer extends BipedEntityRenderer<
         state.mainArm = entity.getMainArm();
 
         // Populate hand stacks so the arm-pose logic can use them
-        ItemStack main = entity.getMainHandStack();
-        ItemStack off  = entity.getOffHandStack();
+        state.mainHandStack = entity.getMainHandStack();
+        state.offHandStack  = entity.getOffHandStack();
+
+        state.hasRangedWeapon = isRanged(state.mainHandStack) || isRanged(state.offHandStack);
 
         // Compute arm poses (used to be assigned on the model; now they go on the state)
-        BipedEntityModel.ArmPose mainPose = getArmPose(entity, main, off, Hand.MAIN_HAND);
-        BipedEntityModel.ArmPose offPose  = getArmPose(entity, main, off, Hand.OFF_HAND);
+        BipedEntityModel.ArmPose mainPose = getArmPose(entity, state.mainHandStack, state.offHandStack, Hand.MAIN_HAND);
+        BipedEntityModel.ArmPose offPose  = getArmPose(entity, state.mainHandStack, state.offHandStack, Hand.OFF_HAND);
 
         if (state.mainArm == Arm.RIGHT) {
             state.rightArmPose = mainPose;
@@ -118,6 +120,12 @@ public class GuardRenderer extends BipedEntityRenderer<
             state.rightArmPose = offPose;
             state.leftArmPose  = mainPose;
         }
+    }
+
+    private static boolean isRanged(ItemStack s) {
+        if (s == null || s.isEmpty()) return false;
+        var it = s.getItem();
+        return (it instanceof net.minecraft.item.BowItem) || (it instanceof net.minecraft.item.CrossbowItem);
     }
 
     private BipedEntityModel.ArmPose getArmPose(GuardEntity entityIn, ItemStack itemStackMain, ItemStack itemStackOff, Hand handIn) {
