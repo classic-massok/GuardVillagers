@@ -31,7 +31,7 @@ public class GuardInteractDoorGoal extends LongDoorInteractGoal {
     }
 
     private boolean areOtherMobsComingThroughDoor(GuardEntity pEntity) {
-        List<? extends PathAwareEntity> nearbyEntityList = pEntity.getWorld().getNonSpectatingEntities(PathAwareEntity.class, pEntity.getBoundingBox().expand(4.0D));
+        List<? extends PathAwareEntity> nearbyEntityList = pEntity.getEntityWorld().getNonSpectatingEntities(PathAwareEntity.class, pEntity.getBoundingBox().expand(4.0D));
         if (!nearbyEntityList.isEmpty()) {
             for (PathAwareEntity mob : nearbyEntityList) {
                 if (mob.getBlockPos().isWithinDistance(pEntity.getPos(), 2.0D))

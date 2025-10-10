@@ -21,7 +21,7 @@ public record GuardFollowPacket(int guardId) implements CustomPayload {
     );
 
     public void handle(ServerPlayNetworking.Context context) {
-        Entity entity = context.player().getWorld().getEntityById(guardId);
+        Entity entity = context.player().getEntityWorld().getEntityById(guardId);
         if (entity instanceof GuardEntity guardEntity) {
             guardEntity.setFollowing(!guardEntity.isFollowing());
             guardEntity.setOwnerId(context.player().getUuid());
