@@ -587,7 +587,7 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
             LootWorldContext.Builder worldCtx = new LootWorldContext.Builder((ServerWorld) getEntityWorld())
                     .add(LootContextParameters.THIS_ENTITY, this);
 
-            Vec3d origin = this.getPos();
+            Vec3d origin = this.getEntityPos();
             DamageSource ds = this.getRecentDamageSource();
             if (ds == null) ds = serverWorld.getDamageSources().generic();
 
@@ -707,7 +707,7 @@ public class GuardEntity extends PathAwareEntity implements CrossbowUser, Ranged
         float oldYaw = this.getYaw(), oldPitch = this.getPitch(), oldHead = this.headYaw;
 
         // compute yaw/pitch to "aim" at that point
-        Vec3d from = this.getPos().add(0.0, this.getEyeHeight(this.getPose()), 0.0);
+        Vec3d from = this.getEntityPos().add(0.0, this.getEyeHeight(this.getPose()), 0.0);
         Vec3d v = aim.subtract(from);
         double dx = v.x, dy = v.y, dz = v.z;
         float newYaw = (float)(Math.toDegrees(Math.atan2(dz, dx)) - 90.0);
