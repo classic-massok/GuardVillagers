@@ -60,7 +60,7 @@ public class GuardRunToEatGoal extends WanderAroundGoal {
             for (LivingEntity mob : list) {
                 if (mob != null) {
                     if (mob.getAttacking() instanceof GuardEntity || mob instanceof MobEntity && ((MobEntity) mob).getTarget() instanceof GuardEntity) {
-                        return NoPenaltyTargeting.findFrom(guard, 16, 7, mob.getPos());
+                        return NoPenaltyTargeting.findFrom(guard, 16, 7, mob.getEntityPos());
                     }
                 }
             }
